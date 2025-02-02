@@ -1,0 +1,25 @@
+/* src/components/NavBar/NavBar.css */
+
+.NavBar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: white;
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+/* Add smooth hover transitions */
+.NavBar a {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Ensure active state is visible even when hovering */
+.NavBar a.active:hover {
+  background-color: #98e4d3;
+}
+
+/* Add a subtle shadow effect on hover for buttons */
+.NavBar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}

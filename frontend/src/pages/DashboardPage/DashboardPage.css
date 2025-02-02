@@ -1,0 +1,86 @@
+.dashboard-page {
+  min-height: 100vh;
+  background-color: white;
+  padding: 2rem 0;
+}
+
+.dashboard-content {
+  max-width: 75rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.dashboard-grid {
+  background-color: #98e4d3;
+  border-radius: 1.5rem;
+  padding: 2rem;
+}
+
+.dashboard-item {
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 1rem;
+  overflow: hidden;
+  height: 100%;
+}
+
+.drag-handle {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: move;
+  user-select: none;
+}
+
+/* Override ReactGrid styles to prevent click issues */
+.react-grid-item {
+  touch-action: none;
+  position: absolute;
+}
+
+/* Make content area scrollable */
+.dashboard-content-area {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Colors for different sections */
+.social-feed {
+  background-color: rgba(212, 231, 170, 0.7);
+}
+
+.music-player {
+  background-color: rgba(247, 203, 163, 0.7);
+}
+
+.music-news {
+  background-color: rgba(255, 181, 181, 0.7);
+}
+
+.blog-feed {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.stats-section {
+  background-color: rgba(152, 228, 211, 0.3);
+}
+
+/* Prevent text selection while dragging */
+.react-grid-item.react-grid-placeholder {
+  z-index: 1;
+  background-color: rgba(152, 228, 211, 0.3);
+  transition: all 200ms ease;
+  border-radius: 1rem;
+  opacity: 0.5;
+}
+
+/* Ensure content is clickable */
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  z-index: 10;
+}
