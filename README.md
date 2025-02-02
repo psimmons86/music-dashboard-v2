@@ -1,59 +1,91 @@
-# Music Dashboard
-![music-dashboard screenshot](https://i.imgur.com/KPvvfDP.png)
-![music-dashboard screenshot](https://i.imgur.com/GHWeGWx.png)
+# Music Dashboard v2
 
-Full-stack web application for music discovery, playlist generation, and content sharing.
-
-**[Live Demo](https://music-dashboard-aed58e43f3b3.herokuapp.com/)**
+A modern full-stack web application for music enthusiasts featuring an enhanced blog system, Spotify integration, and social features.
 
 ## Features
-- Spotify API integration for playlist creation and management
-- Dynamic music news feed with article saving
-- Social posting with music sharing
-- Full blog platform with rich text editor
-- User authentication and profile management
-- Admin dashboard for content moderation
-- Responsive grid-based dashboard layout
+
+### Enhanced Blog System
+- Infinite scrolling for seamless content browsing
+- Real-time search functionality
+- Advanced sorting (newest, oldest, most popular)
+- Category filtering (All, Official, Community, Saved)
+- Reading time estimates
+- Social sharing capabilities
+- Save/bookmark functionality
+- Improved image loading with lazy loading
+
+### Music Integration
+- Spotify Connect integration
+- Weekly playlist generation
+- Music stats and analytics
+- Track previews
+- Personalized recommendations
+
+### Social Features
+- User profiles
+- Comments and discussions
+- Post sharing
+- Community engagement
 
 ## Tech Stack
+
 ### Frontend
-- React Grid Layout - Draggable/resizable dashboard components
-- TipTap - Customizable rich text editor
-- Tailwind CSS - Utility-first CSS framework
-- Lucide - Minimal icon library
+- React
+- Vite
+- TailwindCSS
+- Lucide Icons
+- React Router
 
 ### Backend
-- Node.js/Express
-- MongoDB/Mongoose
-- JWT authentication
-- Spotify Web API
-- News API
+- Node.js
+- Express
+- MongoDB
+- JWT Authentication
 
-### Key Libraries
-- SpotifyWebApi-Node
-- Axios
-- bcrypt
+## Getting Started
 
-## Setup
+1. Clone the repository:
 ```bash
-# Install dependencies
+git clone [repository-url]
+cd music-dashboard-v2
+```
+
+2. Install dependencies:
+```bash
+# Install backend dependencies
 npm install
 
-# Start backend
-nodemon server.js
-
-# Start frontend
-npm start
+# Install frontend dependencies
+cd frontend
+npm install
 ```
 
-## Environment Variables
+3. Create a `.env` file in the root directory with the following variables:
 ```
-MONGODB_URI=
-JWT_SECRET=
-SPOTIFY_CLIENT_ID=
-SPOTIFY_CLIENT_SECRET=
-NEWS_API_KEY=
+DATABASE_URL=your_mongodb_url
+JWT_SECRET=your_jwt_secret
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 ```
 
-## Deployment
-The app is deployed on Heroku at [https://music-dashboard-aed58e43f3b3.herokuapp.com/](https://music-dashboard-aed58e43f3b3.herokuapp.com/)
+4. Start the development servers:
+```bash
+# Start backend server (from root directory)
+npm run dev
+
+# Start frontend server (from frontend directory)
+cd frontend
+npm run dev
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
