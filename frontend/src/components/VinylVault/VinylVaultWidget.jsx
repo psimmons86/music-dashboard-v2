@@ -4,63 +4,38 @@ import * as vinylService from '../../services/vinylService';
 import VinylVaultCard from '../VinylVaultCard/VinylVaultCard';
 import { Link } from 'react-router-dom';
 
-export default function VinylVaultWidget() {
+export default function VinylVaultWidget({ user }) {
   const [stats, setStats] = useState(null);
   const [recentRecords, setRecentRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   useEffect(() => {
     async function fetchVinylData() {
+      if (!user) return;
+
       try {
         setLoading(true);
         setError('');
         const [statsData, recentData] = await Promise.all([
-          vinylService.getVinylStats().catch(err => {
-            if (err.status === 401) {
-              setIsAuthenticated(false);
-            }
-            console.error('Error fetching vinyl stats:', err);
-            return null;
-          }),
-          vinylService.getRecentAdditions().catch(err => {
-            console.error('Error fetching recent additions:', err);
-            return [];
-          })
+          vinylService.getVinylStats(),
+          vinylService.getRecentAdditions()
         ]);
         
-        if (statsData) {
-          setStats(statsData);
-        }
-        if (recentData) {
-          setRecentRecords(recentData);
-        }
+        setStats(statsData);
+        setRecentRecords(recentData);
       } catch (err) {
         console.error('Error fetching vinyl data:', err);
-        if (err.status === 401) {
-          setError('Please log in to view your vinyl collection');
-          setIsAuthenticated(false);
-        } else {
-          setError('Failed to load vinyl collection data');
-        }
+        setError('Failed to load vinyl collection data');
       } finally {
         setLoading(false);
       }
     }
 
     fetchVinylData();
-  }, []);
+  }, [user]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-full space-y-4 p-6">
         <div className="text-center">
@@ -78,6 +53,14 @@ export default function VinylVaultWidget() {
             Log In to Get Started
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
   }

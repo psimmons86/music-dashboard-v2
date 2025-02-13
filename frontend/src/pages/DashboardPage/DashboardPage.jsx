@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import { Users, Music, FileText, Crown, Newspaper, BarChart2, Disc, Bookmark, Album } from 'lucide-react';
+import { Users, Music, FileText, Crown, BarChart2, Disc, Album } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './DashboardPage.css';
@@ -11,14 +11,13 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 // Components
 import PostForm from '../../components/PostForm/PostForm';
 import PostItem from '../../components/PostItem/PostItem';
-import NewsFeed from '../../components/NewsFeed/NewsFeed';
 import SpotifyConnect from '../../components/SpotifyConnect/SpotifyConnect';
 import WeeklyPlaylist from '../../components/WeeklyPlaylist/WeeklyPlaylist';
 import BlogFeed from '../../components/BlogFeed/BlogFeed';
 import PlaylistCard from '../../components/PlaylistCard/PlaylistCard';
 import DashboardItem from '../../components/DashboardItem/DashboardItem';
-import SavedArticles from '../../components/SavedArticles/SavedArticles';
 import VinylVaultWidget from '../../components/VinylVault/VinylVaultWidget';
+import NewsSidebar from '../../components/NewsSidebar/NewsSidebar';
 
 // Services
 import * as postService from '../../services/postService';
@@ -26,58 +25,67 @@ import * as playlistService from '../../services/playlistService';
 
 const DEFAULT_LAYOUTS = {
   lg: [
-    { i: 'social', x: 0, y: 0, w: 12, h: 12 },
-    { i: 'music', x: 0, y: 12, w: 6, h: 12 },
-    { i: 'stats', x: 6, y: 12, w: 6, h: 12 },
-    { i: 'playlist', x: 0, y: 24, w: 6, h: 8 },
-    { i: 'news', x: 6, y: 24, w: 6, h: 12 },
-    { i: 'blogs', x: 0, y: 32, w: 12, h: 8 },
-    { i: 'saved', x: 0, y: 40, w: 6, h: 12 },
-    { i: 'vinyl', x: 6, y: 40, w: 6, h: 12 },
+    // First row - Three equal columns for quick stats/actions
+    { i: 'music', x: 0, y: 0, w: 4, h: 4 },
+    { i: 'stats', x: 4, y: 0, w: 4, h: 4 },
+    { i: 'vinyl', x: 8, y: 0, w: 4, h: 4 },
+    
+    // Second row - Full width for playlist
+    { i: 'playlist', x: 0, y: 4, w: 12, h: 4 },
+    
+    // Third row - Social feed (wider) and blogs
+    { i: 'social', x: 0, y: 8, w: 8, h: 5 },
+    { i: 'blogs', x: 8, y: 8, w: 4, h: 5 },
   ],
   md: [
-    { i: 'social', x: 0, y: 0, w: 10, h: 12 },
-    { i: 'music', x: 0, y: 12, w: 5, h: 12 },
-    { i: 'stats', x: 5, y: 12, w: 5, h: 12 },
-    { i: 'playlist', x: 0, y: 24, w: 5, h: 8 },
-    { i: 'news', x: 5, y: 24, w: 5, h: 12 },
-    { i: 'blogs', x: 0, y: 32, w: 10, h: 8 },
-    { i: 'saved', x: 0, y: 40, w: 5, h: 12 },
-    { i: 'vinyl', x: 5, y: 40, w: 5, h: 12 },
+    // First row - Two equal columns
+    { i: 'music', x: 0, y: 0, w: 5, h: 4 },
+    { i: 'stats', x: 5, y: 0, w: 5, h: 4 },
+    
+    // Second row - Two equal columns
+    { i: 'vinyl', x: 0, y: 4, w: 5, h: 4 },
+    { i: 'playlist', x: 5, y: 4, w: 5, h: 4 },
+    
+    // Third row - Full width
+    { i: 'social', x: 0, y: 8, w: 10, h: 5 },
+    
+    // Fourth row - Full width
+    { i: 'blogs', x: 0, y: 13, w: 10, h: 4 },
   ],
   sm: [
-    { i: 'social', x: 0, y: 0, w: 6, h: 12 },
-    { i: 'music', x: 0, y: 12, w: 3, h: 12 },
-    { i: 'stats', x: 3, y: 12, w: 3, h: 12 },
-    { i: 'playlist', x: 0, y: 24, w: 3, h: 8 },
-    { i: 'news', x: 3, y: 24, w: 3, h: 12 },
-    { i: 'blogs', x: 0, y: 32, w: 6, h: 8 },
-    { i: 'saved', x: 0, y: 40, w: 3, h: 12 },
-    { i: 'vinyl', x: 3, y: 40, w: 3, h: 12 },
+    // First row - Two equal columns
+    { i: 'music', x: 0, y: 0, w: 3, h: 4 },
+    { i: 'stats', x: 3, y: 0, w: 3, h: 4 },
+    
+    // Second row - Two equal columns
+    { i: 'vinyl', x: 0, y: 4, w: 3, h: 4 },
+    { i: 'playlist', x: 3, y: 4, w: 3, h: 4 },
+    
+    // Third row - Full width
+    { i: 'social', x: 0, y: 8, w: 6, h: 5 },
+    
+    // Fourth row - Full width
+    { i: 'blogs', x: 0, y: 13, w: 6, h: 4 },
   ],
   xs: [
-    { i: 'social', x: 0, y: 0, w: 4, h: 12 },
-    { i: 'music', x: 0, y: 12, w: 4, h: 12 },
-    { i: 'stats', x: 0, y: 24, w: 4, h: 12 },
-    { i: 'playlist', x: 0, y: 36, w: 4, h: 8 },
-    { i: 'news', x: 0, y: 44, w: 4, h: 12 },
-    { i: 'blogs', x: 0, y: 56, w: 4, h: 8 },
-    { i: 'saved', x: 0, y: 64, w: 4, h: 12 },
-    { i: 'vinyl', x: 0, y: 76, w: 4, h: 12 },
+    { i: 'music', x: 0, y: 0, w: 4, h: 4 },
+    { i: 'stats', x: 0, y: 4, w: 4, h: 4 },
+    { i: 'vinyl', x: 0, y: 8, w: 4, h: 4 },
+    { i: 'playlist', x: 0, y: 12, w: 4, h: 4 },
+    { i: 'social', x: 0, y: 16, w: 4, h: 5 },
+    { i: 'blogs', x: 0, y: 21, w: 4, h: 4 },
   ],
   xxs: [
-    { i: 'social', x: 0, y: 0, w: 2, h: 12 },
-    { i: 'music', x: 0, y: 12, w: 2, h: 12 },
-    { i: 'stats', x: 0, y: 24, w: 2, h: 12 },
-    { i: 'playlist', x: 0, y: 36, w: 2, h: 8 },
-    { i: 'news', x: 0, y: 44, w: 2, h: 12 },
-    { i: 'blogs', x: 0, y: 56, w: 2, h: 8 },
-    { i: 'saved', x: 0, y: 64, w: 2, h: 12 },
-    { i: 'vinyl', x: 0, y: 76, w: 2, h: 12 },
+    { i: 'music', x: 0, y: 0, w: 2, h: 4 },
+    { i: 'stats', x: 0, y: 4, w: 2, h: 4 },
+    { i: 'vinyl', x: 0, y: 8, w: 2, h: 4 },
+    { i: 'playlist', x: 0, y: 12, w: 2, h: 4 },
+    { i: 'social', x: 0, y: 16, w: 2, h: 5 },
+    { i: 'blogs', x: 0, y: 21, w: 2, h: 4 },
   ],
 };
 
-export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
+export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
@@ -186,12 +194,13 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
             onLayoutChange={handleLayoutChange}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-            rowHeight={30}
+            rowHeight={90}
             autoSize={true}
             isDraggable={true}
             isResizable={true}
-            margin={[16, 16]}
+            margin={[12, 12]}
             draggableHandle=".drag-handle"
+            containerPadding={[16, 16]}
           >
             {/* Social Feed Section */}
             <div key="social" className="dashboard-item social-feed">
@@ -223,19 +232,19 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
                       />
                     ))}
                   </div>
+                </div>
+              </DashboardItem>
             </div>
-          </DashboardItem>
-        </div>
 
-        {/* Vinyl Vault Section */}
-        <div key="vinyl" className="dashboard-item">
-          <DashboardItem
-            title="Vinyl Vault"
-            icon={Album}
-          >
-            <VinylVaultWidget />
-          </DashboardItem>
-        </div>
+            {/* Vinyl Vault Section */}
+            <div key="vinyl" className="dashboard-item">
+              <DashboardItem
+                title="Vinyl Vault"
+                icon={Album}
+              >
+                <VinylVaultWidget user={user} />
+              </DashboardItem>
+            </div>
 
             {/* Music Player Section */}
             <div key="music" className="dashboard-item music-player">
@@ -358,27 +367,6 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
               </DashboardItem>
             </div>
 
-            {/* News Section */}
-            <div key="news" className="dashboard-item music-news">
-              <DashboardItem
-                title="Music News"
-                icon={Newspaper}
-              >
-                <NewsFeed />
-              </DashboardItem>
-            </div>
-
-            {/* Saved Articles Section */}
-            <div key="saved" className="dashboard-item">
-              <DashboardItem
-                title="Saved Articles"
-                icon={Bookmark}
-                className="bg-indigo-50/50"
-              >
-                <SavedArticles />
-              </DashboardItem>
-            </div>
-
             {/* Blog Feed Section */}
             <div key="blogs" className="dashboard-item blog-feed">
               <DashboardItem
@@ -400,6 +388,7 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
           </ResponsiveGridLayout>
         </div>
       </div>
+      <NewsSidebar />
     </div>
   );
 }

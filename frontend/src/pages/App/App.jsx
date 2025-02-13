@@ -24,8 +24,12 @@ export default function App() {
   const location = useLocation();
 
   const [user, setUser] = useState(() => {
-    // Use authService.getUser() to validate token and get user info
-    return authService.getUser();
+    const currentUser = authService.getUser();
+    if (!currentUser) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    return currentUser;
   });
 
   const [spotifyStatus, setSpotifyStatus] = useState({ 
@@ -76,7 +80,6 @@ export default function App() {
   };
 
   const RequireAuth = ({ children }) => {
-    const location = useLocation();
     const currentUser = authService.getUser(); // Check token validity
     
     if (!currentUser) {
@@ -84,6 +87,12 @@ export default function App() {
       handleSetUser(null);
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
+
+    // Ensure user state is in sync with token
+    if (JSON.stringify(currentUser) !== JSON.stringify(user)) {
+      handleSetUser(currentUser);
+    }
+
     return children;
   };
 
