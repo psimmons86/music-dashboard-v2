@@ -9,6 +9,7 @@ exports.getVinylRecords = async (req, res) => {
       .sort({ dateAdded: -1 });
     res.json(records);
   } catch (err) {
+    console.error('Error fetching vinyl records:', err);
     res.status(500).json({ error: 'Error fetching vinyl records' });
   }
 };
@@ -19,6 +20,7 @@ exports.getVinylStats = async (req, res) => {
     const stats = await Vinyl.getStats(req.user._id);
     res.json(stats);
   } catch (err) {
+    console.error('Error fetching vinyl stats:', err);
     res.status(500).json({ error: 'Error fetching vinyl stats' });
   }
 };
@@ -31,6 +33,7 @@ exports.getRecentAdditions = async (req, res) => {
       .limit(5);
     res.json(records);
   } catch (err) {
+    console.error('Error fetching recent additions:', err);
     res.status(500).json({ error: 'Error fetching recent additions' });
   }
 };
@@ -52,6 +55,7 @@ exports.searchDiscogs = async (req, res) => {
     });
     res.json(response.data);
   } catch (err) {
+    console.error('Error searching Discogs:', err);
     res.status(500).json({ error: 'Error searching Discogs' });
   }
 };
@@ -66,6 +70,7 @@ exports.addVinylRecord = async (req, res) => {
     await record.save();
     res.status(201).json(record);
   } catch (err) {
+    console.error('Error adding vinyl record:', err);
     res.status(500).json({ error: 'Error adding vinyl record' });
   }
 };
@@ -84,6 +89,7 @@ exports.updateVinylRecord = async (req, res) => {
     }
     res.json(record);
   } catch (err) {
+    console.error('Error updating vinyl record:', err);
     res.status(500).json({ error: 'Error updating vinyl record' });
   }
 };
@@ -98,6 +104,7 @@ exports.deleteVinylRecord = async (req, res) => {
     }
     res.json({ message: 'Record deleted successfully' });
   } catch (err) {
+    console.error('Error deleting vinyl record:', err);
     res.status(500).json({ error: 'Error deleting vinyl record' });
   }
 };
