@@ -1,11 +1,22 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import NewsFeed from '../../components/NewsFeed/NewsFeed';
 import PlaylistCard from '../../components/PlaylistCard/PlaylistCard';
 import './HomePage.css';
 
 export default function HomePage() {
-  const [activeSection, setActiveSection] = useState('news'); 
+  const [activeSection, setActiveSection] = useState('news');
+  const navigate = useNavigate();
+
+  const CustomLink = ({ to, children, className }) => (
+    <button 
+      onClick={() => navigate(to)} 
+      className={className}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <div className="landing-page">
       <div className="hero-section">
@@ -19,9 +30,9 @@ export default function HomePage() {
           <div className="preview-content">
             <NewsFeed previewMode={true} maxItems={3} />
           </div>
-          <Link to="/signup" className="cta-button">
+          <CustomLink to="/signup" className="cta-button">
             Sign Up to Save Articles
-          </Link>
+          </CustomLink>
         </section>
 
         <section className="preview-box">
@@ -35,9 +46,9 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
-          <Link to="/signup" className="cta-button">
+          <CustomLink to="/signup" className="cta-button">
             Sign Up to Create Playlists
-          </Link>
+          </CustomLink>
         </section>
 
         <section className="preview-box">
@@ -53,9 +64,9 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <Link to="/signup" className="cta-button">
+          <CustomLink to="/signup" className="cta-button">
             Get Started
-          </Link>
+          </CustomLink>
         </section>
       </div>
     </div>

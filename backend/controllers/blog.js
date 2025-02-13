@@ -125,14 +125,23 @@ const blogController = {
 
       // Base filter
       const filter = { 
-        status: 'published',
-        $or: [
+        status: 'published'
+      };
+
+      // Add category filter if provided
+      if (req.query.category) {
+        filter.category = req.query.category;
+      }
+
+      // Add search filter if provided
+      if (searchQuery) {
+        filter.$or = [
           { title: { $regex: searchQuery, $options: 'i' } },
           { content: { $regex: searchQuery, $options: 'i' } },
           { summary: { $regex: searchQuery, $options: 'i' } },
           { tags: { $regex: searchQuery, $options: 'i' } }
-        ]
-      };
+        ];
+      }
 
       // Sorting
       let sort = {};

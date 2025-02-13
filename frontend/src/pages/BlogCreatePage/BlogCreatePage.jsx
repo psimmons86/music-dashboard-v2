@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import * as blogService from '../../services/blogService';
 import RichTextEditor from '../../components/RichTextEditor/RichTextEditor';
 

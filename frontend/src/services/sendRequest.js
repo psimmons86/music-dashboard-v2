@@ -11,9 +11,14 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
   const options = { method };
   options.headers = {};
   
-  // Add token if available
-  const token = getToken();
-  if (token) {
+  // Add token if available and not a login/signup request
+  if (!url.includes('/login') && !url.includes('/signup')) {
+    const token = getToken();
+    if (!token) {
+      // If no token is available for a protected route, handle as auth error
+      handleAuthError({ status: 401 });
+      throw new Error('No authentication token available');
+    }
     options.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -52,7 +57,7 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
 
     // Handle unsuccessful responses
     if (!res.ok) {
-      console.error('Request failed:', json);
+      console.error('Request failed:', JSON.stringify(json, null, 2));
       
       // Handle rate limiting
       if (res.status === 429 && retryCount < MAX_RETRIES) {
@@ -61,14 +66,21 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
         return sendRequest(url, method, payload, retryCount + 1);
       }
 
+      // Handle authentication errors immediately
+      if (res.status === 401 && !url.includes('/login')) {
+        handleAuthError({ status: 401, message: json.message });
+        throw new Error(json.message || 'Authentication failed');
+      }
+
       const error = new Error(json.message || json.error || 'Request failed');
       error.status = res.status;
+      error.response = json;
       throw error;
     }
 
     return json;
   } catch (err) {
-    console.error('Request error:', err);
+    console.error('Request error:', err.message);
 
     // Handle network errors with retry
     if (err.name === 'AbortError') {
@@ -81,14 +93,8 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
     }
 
     // Handle authentication errors
-    if (err.status === 401) {
-      // Save current URL before redirect
-      const currentPath = window.location.pathname + window.location.search;
-      localStorage.setItem('redirectUrl', currentPath);
-      
-      if (handleAuthError(err)) {
-        return;
-      }
+    if (err.status === 401 && !url.includes('/login')) {
+      handleAuthError(err);
     }
 
     throw err;

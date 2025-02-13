@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import * as authService from '../../services/authService';
 
 export default function SignUpPage({ setUser }) {

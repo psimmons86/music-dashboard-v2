@@ -80,11 +80,11 @@ export default function PostItem({ post, onDelete }) {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
             <span className="text-white font-medium">
-              {post.user.name.charAt(0).toUpperCase()}
+              {post.user?.name ? post.user.name.charAt(0).toUpperCase() : '?'}
             </span>
           </div>
           <div>
-            <h4 className="font-medium text-gray-800">{post.user.name}</h4>
+            <h4 className="font-medium text-gray-800">{post.user?.name || 'Unknown User'}</h4>
             <time className="text-sm text-gray-500">
               {new Date(post.createdAt).toLocaleDateString()}
             </time>
@@ -101,7 +101,7 @@ export default function PostItem({ post, onDelete }) {
             <span className="text-sm">{likeCount}</span>
           </button>
 
-          {userData?._id === post.user._id && (
+          {userData?._id === post.user?._id && (
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}

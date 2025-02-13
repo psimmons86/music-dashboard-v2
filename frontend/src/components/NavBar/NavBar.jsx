@@ -1,4 +1,4 @@
-import { NavLink, Link, useNavigate } from 'react-router';
+import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { logOut } from '../../services/authService';
 
 export default function NavBar({ user, setUser }) {

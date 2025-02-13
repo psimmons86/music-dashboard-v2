@@ -4,15 +4,21 @@ const blogController = require('../controllers/blog');
 const checkToken = require('../middleware/checkToken');
 const ensureLoggedIn = require('../middleware/ensureLoggedIn');
 
+// Public routes for reading blogs
 router.get('/', blogController.getAll);
 router.get('/:id', blogController.getOne);
 
-router.use(checkToken);
-router.use(ensureLoggedIn);
+// Protected routes for managing blogs
+const protectedRouter = express.Router();
+protectedRouter.use(checkToken);
+protectedRouter.use(ensureLoggedIn);
 
-router.post('/', blogController.create);
-router.get('/user/posts', blogController.getUserBlogs);
-router.put('/:id', blogController.update);
-router.delete('/:id', blogController.delete);
+protectedRouter.post('/', blogController.create);
+protectedRouter.get('/user/posts', blogController.getUserBlogs);
+protectedRouter.put('/:id', blogController.update);
+protectedRouter.delete('/:id', blogController.delete);
+
+// Register protected routes
+router.use(protectedRouter);
 
 module.exports = router;

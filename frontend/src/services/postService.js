@@ -1,4 +1,4 @@
-import { getToken } from './authService';
+import sendRequest from './sendRequest';
 
 const BASE_URL = '/api/posts';
 
@@ -29,27 +29,4 @@ export async function deleteComment(postId, commentId) {
 
 export async function updateComment(postId, commentId, content) {
   return await sendRequest(`${BASE_URL}/${postId}/comments/${commentId}`, 'PUT', { content });
-}
-
-// Helper function for all requests
-async function sendRequest(url, method = 'GET', data = null) {
-  const options = {
-    method,
-    headers: {
-      'Authorization': getToken(),
-    }
-  };
-
-  if (data) {
-    options.headers['Content-Type'] = 'application/json';
-    options.body = JSON.stringify(data);
-  }
-
-  const res = await fetch(url, options);
-  if (res.ok) {
-    return res.json();
-  } else {
-    const error = await res.json();
-    throw new Error(error.message || 'Something went wrong');
-  }
 }

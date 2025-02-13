@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import * as blogService from '../../services/blogService';

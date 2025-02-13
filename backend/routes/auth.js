@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth');
-const checkToken = require('../middleware/checkToken');
 
-
+// Public auth routes
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 
-router.get('/profile', checkToken, authController.getProfile);
+// Protected auth routes
+const checkToken = require('../middleware/checkToken');
+const protectedRouter = express.Router();
+protectedRouter.use(checkToken);
 
+protectedRouter.get('/profile', authController.getProfile);
+protectedRouter.post('/update-role', authController.updateRole);
 
-router.post('/update-role', 
-  checkToken,
-  authController.updateRole
-);
+// Mount protected routes
+router.use(protectedRouter);
 
 module.exports = router;

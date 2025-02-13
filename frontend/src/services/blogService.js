@@ -2,12 +2,13 @@ import sendRequest from './sendRequest';
 
 const BASE_URL = '/api/blog';
 
-export function getAllBlogs(page = 1, limit = 10, sortBy = 'newest', searchQuery = '') {
+export function getAllBlogs(page = 1, limit = 10, sortBy = 'newest', searchQuery = '', category = '') {
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
     sortBy,
-    search: searchQuery
+    search: searchQuery,
+    ...(category && { category })
   });
   return sendRequest(`${BASE_URL}?${params.toString()}`);
 }

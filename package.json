@@ -12,7 +12,13 @@
     "node": "18.x",
     "npm": "9.x"
   },
-  "keywords": ["music", "dashboard", "spotify", "blog", "social"],
+  "keywords": [
+    "music",
+    "dashboard",
+    "spotify",
+    "blog",
+    "social"
+  ],
   "author": "",
   "license": "ISC",
   "description": "A modern full-stack web application for music enthusiasts featuring an enhanced blog system",

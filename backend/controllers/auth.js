@@ -89,47 +89,53 @@ const authController = {
     try {
       const { email, password } = req.body;
 
-      // Input validation
-      if (!email || !password) {
-        return res.status(400).json({ 
-          message: 'Please provide email and password' 
+      try {
+        // Input validation
+        if (!email || !password) {
+          return res.status(400).json({ 
+            message: 'Please provide email and password' 
+          });
+        }
+
+        // Find user by email (case-insensitive)
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+          return res.status(401).json({ 
+            message: 'Invalid email or password' 
+          });
+        }
+
+        // Verify password
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+          return res.status(401).json({ 
+            message: 'Invalid email or password' 
+          });
+        }
+
+        // Generate JWT
+        const token = createJWT(user);
+
+        // Prepare user response (remove sensitive data)
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        // Send successful response
+        res.json({
+          user: userResponse,
+          token
+        });
+      } catch (err) {
+        console.error('Login processing error:', err);
+        res.status(500).json({ 
+          message: 'Error processing login request' 
         });
       }
-
-      // Find user by email (case-insensitive)
-      const user = await User.findOne({ email: email.toLowerCase() });
-      if (!user) {
-        return res.status(401).json({ 
-          message: 'Invalid credentials' 
-        });
-      }
-
-      // Verify password
-      const isMatch = await user.comparePassword(password);
-      if (!isMatch) {
-        return res.status(401).json({ 
-          message: 'Invalid credentials' 
-        });
-      }
-
-      // Generate JWT
-      const token = createJWT(user);
-
-      // Prepare user response (remove sensitive data)
-      const userResponse = user.toObject();
-      delete userResponse.password;
-
-      // Send successful response
-      res.json({
-        user: userResponse,
-        token
-      });
 
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ 
-        message: 'Error logging in', 
-        error: error.message 
+        message: error.message || 'Error logging in'
       });
     }
   },

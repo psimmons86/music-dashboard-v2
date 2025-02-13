@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import * as spotifyService from '../../services/spotifyService';
+import * as authService from '../../services/authService';
 import './App.css';
 
 // Components
@@ -23,18 +24,8 @@ export default function App() {
   const location = useLocation();
 
   const [user, setUser] = useState(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    if (token && userStr) {
-      try {
-        return JSON.parse(userStr);
-      } catch (err) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        return null;
-      }
-    }
-    return null;
+    // Use authService.getUser() to validate token and get user info
+    return authService.getUser();
   });
 
   const [spotifyStatus, setSpotifyStatus] = useState({ 
@@ -79,98 +70,66 @@ export default function App() {
       localStorage.setItem('user', JSON.stringify(userData));
     } else {
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
     }
     setUser(userData);
   };
 
-  const requireAuth = (element) => {
-    if (!user) {
-      return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  const RequireAuth = ({ children }) => {
+    const location = useLocation();
+    const currentUser = authService.getUser(); // Check token validity
+    
+    if (!currentUser) {
+      // If token is invalid, clear user state and redirect
+      handleSetUser(null);
+      return <Navigate to="/login" state={{ from: location }} replace />;
     }
-    return element;
+    return children;
   };
 
   return (
     <main className="App">
       <NavBar user={user} setUser={handleSetUser} />
-      
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
-        
-        <Route 
-          path="/signup" 
-          element={
-            !user ? <SignUpPage setUser={handleSetUser} /> : <Navigate to="/dashboard" replace />
-          } 
-        />
-        
-        <Route 
-          path="/login" 
-          element={
-            !user ? (
-              <LogInPage setUser={handleSetUser} />
-            ) : (
-              <Navigate to={location.state?.from || '/dashboard'} replace />
-            )
-          }
-        />
-
-        {/* Protected Routes */}
-        <Route 
-          path="/dashboard" 
-          element={
-            requireAuth(
-              <DashboardPage 
-                spotifyStatus={spotifyStatus}
-                onSpotifyUpdate={checkSpotifyStatus}
-                user={user}
-              />
-            )
-          }
-        />
-
-        <Route 
-          path="/profile" 
-          element={requireAuth(<ProfilePage user={user} />)}
-        />
-
-        {/* Blog Routes - Now Open to Everyone */}
+        <Route path="/signup" element={!user ? <SignUpPage setUser={handleSetUser} /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={!user ? <LogInPage setUser={handleSetUser} /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={
+          <RequireAuth>
+            <DashboardPage 
+              spotifyStatus={spotifyStatus}
+              onSpotifyUpdate={checkSpotifyStatus}
+              user={user}
+            />
+          </RequireAuth>
+        } />
+        <Route path="/profile" element={
+          <RequireAuth>
+            <ProfilePage user={user} />
+          </RequireAuth>
+        } />
         <Route path="/blog" element={<BlogListPage />} />
-        <Route path="/blog/create" element={<BlogCreatePage />} />
-        <Route path="/blog/:id/edit" element={<BlogEditPage />} />
+        <Route path="/blog/create" element={
+          <RequireAuth>
+            <BlogCreatePage />
+          </RequireAuth>
+        } />
         <Route path="/blog/:id" element={<BlogDetailPage />} />
-
-        {/* Admin Routes */}
-        <Route 
-          path="/admin/weekly-playlist" 
-          element={
-            requireAuth(<WeeklyPlaylistAdmin />)
-          }
-        />
-
-        {/* Spotify Routes */}
-        <Route 
-          path="/spotify/callback" 
-          element={
-            requireAuth(
-              <SpotifyCallback 
-                onSuccess={checkSpotifyStatus}
-                user={user}
-              />
-            )
-          }
-        />
-
-        {/* Catch-all Route */}
-        <Route 
-          path="*" 
-          element={
-            user ? 
-            <Navigate to="/dashboard" replace /> : 
-            <Navigate to="/login" state={{ from: location.pathname }} replace />
-          } 
-        />
+        <Route path="/blog/:id/edit" element={
+          <RequireAuth>
+            <BlogEditPage />
+          </RequireAuth>
+        } />
+        <Route path="/admin/weekly-playlist" element={
+          <RequireAuth>
+            <WeeklyPlaylistAdmin />
+          </RequireAuth>
+        } />
+        <Route path="/spotify/callback" element={
+          <RequireAuth>
+            <SpotifyCallback onSuccess={checkSpotifyStatus} user={user} />
+          </RequireAuth>
+        } />
       </Routes>
     </main>
   );

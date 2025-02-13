@@ -32,26 +32,33 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// Public routes (no auth required)
+// Create separate routers
+const publicRouter = express.Router();
+const protectedRouter = express.Router();
+
+// Auth routes (no middleware, must be first)
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/news', require('./routes/news'));
 
-// Spotify auth routes (for initial connection)
-app.use('/api/spotify/connect', require('./routes/spotify'));
-app.use('/api/spotify/callback', require('./routes/spotify'));
+// Public routes
+publicRouter.use('/news', require('./routes/news'));
+publicRouter.use('/weekly-playlist', require('./routes/weeklyPlaylist'));
+publicRouter.use('/articles', require('./routes/articles'));
+publicRouter.use('/blog', require('./routes/blog'));
+publicRouter.use('/spotify/connect', require('./routes/spotify'));
+publicRouter.use('/spotify/callback', require('./routes/spotify'));
 
-// Auth middleware for protected routes
-app.use('/api', require('./middleware/checkToken'));
-app.use('/api', require('./middleware/ensureLoggedIn'));
+// Protected routes
+protectedRouter.use(require('./middleware/checkToken'));
+protectedRouter.use(require('./middleware/ensureLoggedIn'));
+protectedRouter.use('/user', require('./routes/user'));
+protectedRouter.use('/posts', require('./routes/posts'));
+protectedRouter.use('/spotify', require('./routes/spotify'));
+protectedRouter.use('/playlist', require('./routes/playlist'));
+protectedRouter.use('/vinyl', require('./routes/vinyl')); // Moved to protected routes
 
-// Protected routes (just need to be logged in)
-app.use('/api/blog', require('./routes/blog'));
-app.use('/api/articles', require('./routes/articles'));
-app.use('/api/user', require('./routes/user'));
-app.use('/api/posts', require('./routes/posts'));
-app.use('/api/spotify', require('./routes/spotify'));
-app.use('/api/playlist', require('./routes/playlist'));
-app.use('/api/weekly-playlist', require('./routes/weeklyPlaylist'));
+// Mount routers in specific order (after auth)
+app.use('/api', publicRouter);
+app.use('/api', protectedRouter);
 
 // SPA catch-all route
 app.get('/*', function(req, res) {

@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { FileText, Crown, Loader2, Share2, Clock, Search, BookmarkPlus, BookmarkCheck } from 'lucide-react';
+import { FileText, Crown, Loader2, Share2, Clock } from 'lucide-react';
+import { Search } from 'lucide-react';
 import * as blogService from '../../services/blogService';
 import { tagColors } from '../../constants';
 
 export default function BlogFeed() {
+  const navigate = useNavigate();
   const [blogs, setBlogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +37,11 @@ export default function BlogFeed() {
     async function fetchBlogs() {
       try {
         setIsLoading(true);
-        const data = await blogService.getAllBlogs(page, ITEMS_PER_PAGE, sortBy, searchQuery);
+        let category = '';
+        if (filter === 'daily-dispatch') category = 'Daily Dispatch';
+        if (filter === 'vinyl-vault') category = 'Vinyl Vault';
+        
+        const data = await blogService.getAllBlogs(page, ITEMS_PER_PAGE, sortBy, searchQuery, category);
         
         if (isMounted) {
           setBlogs(prev => page === 1 ? data.blogs : [...prev, ...data.blogs]);
@@ -62,7 +68,7 @@ export default function BlogFeed() {
     return () => {
       isMounted = false;
     };
-  }, [page, sortBy, searchQuery]);
+  }, [page, sortBy, searchQuery, filter]);
 
   // Reset page when search or sort changes
   useEffect(() => {
@@ -75,6 +81,8 @@ export default function BlogFeed() {
     if (filter === 'official') return blog.isAdmin;
     if (filter === 'community') return !blog.isAdmin;
     if (filter === 'saved') return savedPosts.has(blog._id);
+    if (filter === 'daily-dispatch') return blog.category === 'Daily Dispatch';
+    if (filter === 'vinyl-vault') return blog.category === 'Vinyl Vault';
     return true;
   });
 
@@ -116,6 +124,15 @@ export default function BlogFeed() {
     localStorage.setItem('savedPosts', JSON.stringify([...newSavedPosts]));
   };
 
+  const CustomLink = ({ to, children, className }) => (
+    <button 
+      onClick={() => navigate(to)} 
+      className={className}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <Card className="w-full bg-white/60">
       <CardHeader className="flex flex-col space-y-4 pb-2">
@@ -124,12 +141,12 @@ export default function BlogFeed() {
             <FileText className="h-4 w-4 text-emerald-600" />
             <h3 className="font-semibold text-gray-800">Blog Posts</h3>
           </div>
-          <Link 
+          <CustomLink 
             to="/blog" 
             className="text-sm text-emerald-600 hover:underline"
           >
             View All
-          </Link>
+          </CustomLink>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -150,6 +167,8 @@ export default function BlogFeed() {
             className="text-sm bg-white/60 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value="all">All Posts</option>
+            <option value="daily-dispatch">Daily Dispatch</option>
+            <option value="vinyl-vault">Vinyl Vault</option>
             <option value="official">Official</option>
             <option value="community">Community</option>
             <option value="saved">Saved</option>
@@ -202,23 +221,12 @@ export default function BlogFeed() {
                       >
                         <Share2 className="h-4 w-4 text-gray-500" />
                       </button>
-                      <button
-                        onClick={() => toggleSave(blog._id)}
-                        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                        title={savedPosts.has(blog._id) ? "Remove from saved" : "Save post"}
-                      >
-                        {savedPosts.has(blog._id) ? (
-                          <BookmarkCheck className="h-4 w-4 text-emerald-500" />
-                        ) : (
-                          <BookmarkPlus className="h-4 w-4 text-gray-500" />
-                        )}
-                      </button>
                     </div>
                   </div>
                   
                   {blog.imageUrl && (
                     <div className="aspect-video w-full overflow-hidden rounded-lg">
-                      <Link to={`/blog/${blog._id}`}>
+                      <CustomLink to={`/blog/${blog._id}`}>
                         <img
                           src={blog.imageUrl}
                           alt={blog.title}
@@ -228,16 +236,16 @@ export default function BlogFeed() {
                           }}
                           loading="lazy"
                         />
-                      </Link>
+                      </CustomLink>
                     </div>
                   )}
 
                   <div>
-                    <Link to={`/blog/${blog._id}`}>
+                    <CustomLink to={`/blog/${blog._id}`}>
                       <h4 className="font-medium text-lg text-gray-800 hover:text-emerald-600 transition-colors">
                         {blog.title}
                       </h4>
-                    </Link>
+                    </CustomLink>
                     
                     <p className="text-sm text-gray-600 mt-2 line-clamp-2">
                       {blog.summary}

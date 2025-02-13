@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import { Users, Music, FileText, Crown, Newspaper, BarChart2, Disc, Bookmark } from 'lucide-react';
+import { Users, Music, FileText, Crown, Newspaper, BarChart2, Disc, Bookmark, Album } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './DashboardPage.css';
@@ -18,6 +18,7 @@ import BlogFeed from '../../components/BlogFeed/BlogFeed';
 import PlaylistCard from '../../components/PlaylistCard/PlaylistCard';
 import DashboardItem from '../../components/DashboardItem/DashboardItem';
 import SavedArticles from '../../components/SavedArticles/SavedArticles';
+import VinylVaultWidget from '../../components/VinylVault/VinylVaultWidget';
 
 // Services
 import * as postService from '../../services/postService';
@@ -32,6 +33,7 @@ const DEFAULT_LAYOUTS = {
     { i: 'news', x: 6, y: 24, w: 6, h: 12 },
     { i: 'blogs', x: 0, y: 32, w: 12, h: 8 },
     { i: 'saved', x: 0, y: 40, w: 6, h: 12 },
+    { i: 'vinyl', x: 6, y: 40, w: 6, h: 12 },
   ],
   md: [
     { i: 'social', x: 0, y: 0, w: 10, h: 12 },
@@ -41,6 +43,7 @@ const DEFAULT_LAYOUTS = {
     { i: 'news', x: 5, y: 24, w: 5, h: 12 },
     { i: 'blogs', x: 0, y: 32, w: 10, h: 8 },
     { i: 'saved', x: 0, y: 40, w: 5, h: 12 },
+    { i: 'vinyl', x: 5, y: 40, w: 5, h: 12 },
   ],
   sm: [
     { i: 'social', x: 0, y: 0, w: 6, h: 12 },
@@ -50,6 +53,7 @@ const DEFAULT_LAYOUTS = {
     { i: 'news', x: 3, y: 24, w: 3, h: 12 },
     { i: 'blogs', x: 0, y: 32, w: 6, h: 8 },
     { i: 'saved', x: 0, y: 40, w: 3, h: 12 },
+    { i: 'vinyl', x: 3, y: 40, w: 3, h: 12 },
   ],
   xs: [
     { i: 'social', x: 0, y: 0, w: 4, h: 12 },
@@ -59,6 +63,7 @@ const DEFAULT_LAYOUTS = {
     { i: 'news', x: 0, y: 44, w: 4, h: 12 },
     { i: 'blogs', x: 0, y: 56, w: 4, h: 8 },
     { i: 'saved', x: 0, y: 64, w: 4, h: 12 },
+    { i: 'vinyl', x: 0, y: 76, w: 4, h: 12 },
   ],
   xxs: [
     { i: 'social', x: 0, y: 0, w: 2, h: 12 },
@@ -68,10 +73,12 @@ const DEFAULT_LAYOUTS = {
     { i: 'news', x: 0, y: 44, w: 2, h: 12 },
     { i: 'blogs', x: 0, y: 56, w: 2, h: 8 },
     { i: 'saved', x: 0, y: 64, w: 2, h: 12 },
+    { i: 'vinyl', x: 0, y: 76, w: 2, h: 12 },
   ],
 };
 
 export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -152,6 +159,15 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
     }
   };
 
+  const CustomLink = ({ to, children, className }) => (
+    <button 
+      onClick={() => navigate(to)} 
+      className={className}
+    >
+      {children}
+    </button>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
@@ -183,12 +199,12 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
                 title="Social Feed"
                 icon={Users}
                 headerActions={
-                  <Link
+                  <CustomLink
                     to="/blog/create"
                     className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
                   >
                     Write Blog Post
-                  </Link>
+                  </CustomLink>
                 }
               >
                 <div className="flex-1 overflow-hidden">
@@ -207,9 +223,19 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
                       />
                     ))}
                   </div>
-                </div>
-              </DashboardItem>
             </div>
+          </DashboardItem>
+        </div>
+
+        {/* Vinyl Vault Section */}
+        <div key="vinyl" className="dashboard-item">
+          <DashboardItem
+            title="Vinyl Vault"
+            icon={Album}
+          >
+            <VinylVaultWidget />
+          </DashboardItem>
+        </div>
 
             {/* Music Player Section */}
             <div key="music" className="dashboard-item music-player">
@@ -323,57 +349,57 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate }) {
             </div>
 
             {/* Weekly Playlist Section */}
-<div key="playlist" className="dashboard-item">
-  <DashboardItem
-    title="Weekly Playlist"
-    icon={Crown}
-  >
-    <WeeklyPlaylist />
-  </DashboardItem>
-</div>
+            <div key="playlist" className="dashboard-item">
+              <DashboardItem
+                title="Weekly Playlist"
+                icon={Crown}
+              >
+                <WeeklyPlaylist />
+              </DashboardItem>
+            </div>
 
-{/* News Section */}
-<div key="news" className="dashboard-item music-news">
-  <DashboardItem
-    title="Music News"
-    icon={Newspaper}
-  >
-    <NewsFeed />
-  </DashboardItem>
-</div>
+            {/* News Section */}
+            <div key="news" className="dashboard-item music-news">
+              <DashboardItem
+                title="Music News"
+                icon={Newspaper}
+              >
+                <NewsFeed />
+              </DashboardItem>
+            </div>
 
-{/* Saved Articles Section */}
-<div key="saved" className="dashboard-item">
-  <DashboardItem
-    title="Saved Articles"
-    icon={Bookmark}
-    className="bg-indigo-50/50"
-  >
-    <SavedArticles />
-  </DashboardItem>
-</div>
+            {/* Saved Articles Section */}
+            <div key="saved" className="dashboard-item">
+              <DashboardItem
+                title="Saved Articles"
+                icon={Bookmark}
+                className="bg-indigo-50/50"
+              >
+                <SavedArticles />
+              </DashboardItem>
+            </div>
 
-{/* Blog Feed Section */}
-<div key="blogs" className="dashboard-item blog-feed">
-  <DashboardItem
-    title="Daily Dispatch"
-    icon={FileText}
-    headerActions={
-      <Link 
-        to="/blog" 
-        className="text-sm text-emerald-600 hover:underline"
-      >
-        View All
-      </Link>
-    }
-  >
-    <BlogFeed />
-  </DashboardItem>
-</div>
+            {/* Blog Feed Section */}
+            <div key="blogs" className="dashboard-item blog-feed">
+              <DashboardItem
+                title="Daily Dispatch"
+                icon={FileText}
+                headerActions={
+                  <CustomLink 
+                    to="/blog" 
+                    className="text-sm text-emerald-600 hover:underline"
+                  >
+                    View All
+                  </CustomLink>
+                }
+              >
+                <BlogFeed />
+              </DashboardItem>
+            </div>
 
-</ResponsiveGridLayout>
-</div>
-</div>
-</div>
-);
+          </ResponsiveGridLayout>
+        </div>
+      </div>
+    </div>
+  );
 }

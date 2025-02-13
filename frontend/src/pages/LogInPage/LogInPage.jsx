@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import * as authService from '../../services/authService';
 
 export default function LogInPage({ setUser }) {
@@ -16,15 +16,25 @@ export default function LogInPage({ setUser }) {
     setErrorMsg('');
   }
 
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/dashboard';
+
   async function handleSubmit(evt) {
     evt.preventDefault();
+    setErrorMsg('');
     try {
       const user = await authService.logIn(formData);
-      setUser(user);
-      navigate('/dashboard');
+      if (user) {
+        setUser(user);
+        navigate(from, { replace: true });
+      } else {
+        setErrorMsg('Login failed - please try again');
+      }
     } catch (err) {
-      console.log(err);
-      setErrorMsg('Log In Failed - Try Again');
+      console.error('Login error:', err);
+      // Try to extract error message from different possible locations
+      const errorMessage = err.toString() || 'Login failed - please try again';
+      setErrorMsg(errorMessage);
     }
   }
 

@@ -60,13 +60,24 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  try {
+    if (!this.isModified('password')) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 userSchema.methods.comparePassword = async function(tryPassword) {
-  return bcrypt.compare(tryPassword, this.password);
+  try {
+    if (!tryPassword || !this.password) return false;
+    return await bcrypt.compare(tryPassword, this.password);
+  } catch (err) {
+    console.error('Password comparison error:', err);
+    return false;
+  }
 };
 
 module.exports = mongoose.model('User', userSchema);
