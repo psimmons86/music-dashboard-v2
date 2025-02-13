@@ -11,13 +11,13 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 // Components
 import PostForm from '../../components/PostForm/PostForm';
 import PostItem from '../../components/PostItem/PostItem';
-import SpotifyConnect from '../../components/SpotifyConnect/SpotifyConnect';
 import WeeklyPlaylist from '../../components/WeeklyPlaylist/WeeklyPlaylist';
 import BlogFeed from '../../components/BlogFeed/BlogFeed';
 import PlaylistCard from '../../components/PlaylistCard/PlaylistCard';
 import DashboardItem from '../../components/DashboardItem/DashboardItem';
 import VinylVaultWidget from '../../components/VinylVault/VinylVaultWidget';
 import NewsSidebar from '../../components/NewsSidebar/NewsSidebar';
+import MusicServiceSelection from '../../components/MusicServiceSelection/MusicServiceSelection';
 
 // Services
 import * as postService from '../../services/postService';
@@ -25,46 +25,27 @@ import * as playlistService from '../../services/playlistService';
 
 const DEFAULT_LAYOUTS = {
   lg: [
-    // First row - Three equal columns for quick stats/actions
     { i: 'music', x: 0, y: 0, w: 4, h: 4 },
     { i: 'stats', x: 4, y: 0, w: 4, h: 4 },
     { i: 'vinyl', x: 8, y: 0, w: 4, h: 4 },
-    
-    // Second row - Full width for playlist
     { i: 'playlist', x: 0, y: 4, w: 12, h: 4 },
-    
-    // Third row - Social feed (wider) and blogs
     { i: 'social', x: 0, y: 8, w: 8, h: 5 },
     { i: 'blogs', x: 8, y: 8, w: 4, h: 5 },
   ],
   md: [
-    // First row - Two equal columns
     { i: 'music', x: 0, y: 0, w: 5, h: 4 },
     { i: 'stats', x: 5, y: 0, w: 5, h: 4 },
-    
-    // Second row - Two equal columns
     { i: 'vinyl', x: 0, y: 4, w: 5, h: 4 },
     { i: 'playlist', x: 5, y: 4, w: 5, h: 4 },
-    
-    // Third row - Full width
     { i: 'social', x: 0, y: 8, w: 10, h: 5 },
-    
-    // Fourth row - Full width
     { i: 'blogs', x: 0, y: 13, w: 10, h: 4 },
   ],
   sm: [
-    // First row - Two equal columns
     { i: 'music', x: 0, y: 0, w: 3, h: 4 },
     { i: 'stats', x: 3, y: 0, w: 3, h: 4 },
-    
-    // Second row - Two equal columns
     { i: 'vinyl', x: 0, y: 4, w: 3, h: 4 },
     { i: 'playlist', x: 3, y: 4, w: 3, h: 4 },
-    
-    // Third row - Full width
     { i: 'social', x: 0, y: 8, w: 6, h: 5 },
-    
-    // Fourth row - Full width
     { i: 'blogs', x: 0, y: 13, w: 6, h: 4 },
   ],
   xs: [
@@ -85,7 +66,7 @@ const DEFAULT_LAYOUTS = {
   ],
 };
 
-export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) {
+export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpotifyUpdate, onAppleMusicUpdate, user }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
@@ -104,6 +85,8 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
       return DEFAULT_LAYOUTS;
     }
   });
+
+  const isMusicConnected = spotifyStatus?.connected || appleMusicStatus?.connected;
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -125,7 +108,7 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
   useEffect(() => {
     async function fetchStats() {
       try {
-        if (spotifyStatus?.connected) {
+        if (isMusicConnected) {
           const statsData = await playlistService.getUserStats();
           setStats(statsData);
         }
@@ -134,7 +117,7 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
       }
     }
     fetchStats();
-  }, [spotifyStatus?.connected]);
+  }, [isMusicConnected]);
 
   const handleCreatePost = async (postData) => {
     try {
@@ -252,7 +235,7 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
                 title="Playlist Generator"
                 icon={Music}
               >
-                {spotifyStatus?.connected ? (
+                {isMusicConnected ? (
                   <PlaylistCard
                     title="Create Daily Mix"
                     actionButtonText="Generate Playlist"
@@ -264,9 +247,12 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
                 ) : (
                   <div className="text-center">
                     <p className="text-gray-600 text-sm mb-6">
-                      Connect Spotify to create playlists
+                      Connect a music service to create playlists
                     </p>
-                    <SpotifyConnect onSuccess={onSpotifyUpdate} />
+                    <MusicServiceSelection 
+                      onSpotifyUpdate={onSpotifyUpdate}
+                      onAppleMusicUpdate={onAppleMusicUpdate}
+                    />
                   </div>
                 )}
               </DashboardItem>
@@ -278,7 +264,7 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
                 title="Music Stats"
                 icon={BarChart2}
               >
-                {spotifyStatus?.connected ? (
+                {isMusicConnected ? (
                   <div className="space-y-6">
                     {/* Top Artists */}
                     <div className="space-y-3">
@@ -349,9 +335,12 @@ export default function DashboardPage({ spotifyStatus, onSpotifyUpdate, user }) 
                 ) : (
                   <div className="text-center">
                     <p className="text-gray-600 text-sm mb-6">
-                      Connect Spotify to view your stats
+                      Connect a music service to view your stats
                     </p>
-                    <SpotifyConnect onSuccess={onSpotifyUpdate} />
+                    <MusicServiceSelection 
+                      onSpotifyUpdate={onSpotifyUpdate}
+                      onAppleMusicUpdate={onAppleMusicUpdate}
+                    />
                   </div>
                 )}
               </DashboardItem>

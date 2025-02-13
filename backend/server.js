@@ -46,6 +46,7 @@ publicRouter.use('/articles', require('./routes/articles'));
 publicRouter.use('/blog', require('./routes/blog'));
 publicRouter.use('/spotify/connect', require('./routes/spotify'));
 publicRouter.use('/spotify/callback', require('./routes/spotify'));
+publicRouter.use('/applemusic/connect', require('./routes/applemusic'));
 
 // Protected routes
 protectedRouter.use(require('./middleware/checkToken'));
@@ -53,6 +54,7 @@ protectedRouter.use(require('./middleware/ensureLoggedIn'));
 protectedRouter.use('/user', require('./routes/user'));
 protectedRouter.use('/posts', require('./routes/posts'));
 protectedRouter.use('/spotify', require('./routes/spotify'));
+protectedRouter.use('/applemusic', require('./routes/applemusic'));
 protectedRouter.use('/playlist', require('./routes/playlist'));
 protectedRouter.use('/vinyl', require('./routes/vinyl')); // Moved to protected routes
 

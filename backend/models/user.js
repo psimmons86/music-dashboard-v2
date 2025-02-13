@@ -37,6 +37,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  appleMusicToken: {
+    type: String,
+    default: null
+  },
+  appleMusicUserToken: {
+    type: String,
+    default: null
+  },
   profilePicture: {
     type: String,
     default: '/default-profile.png'

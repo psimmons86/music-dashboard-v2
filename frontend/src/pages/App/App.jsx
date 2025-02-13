@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import * as spotifyService from '../../services/spotifyService';
+import * as appleMusicService from '../../services/appleMusicService';
 import * as authService from '../../services/authService';
 import './App.css';
 
@@ -37,6 +38,36 @@ export default function App() {
     checking: true 
   });
 
+  const [appleMusicStatus, setAppleMusicStatus] = useState({
+    connected: false,
+    checking: true
+  });
+
+  const checkAppleMusicStatus = async () => {
+    try {
+      if (!user) {
+        setAppleMusicStatus({ connected: false, checking: false });
+        return;
+      }
+
+      const status = await appleMusicService.getAppleMusicStatus();
+      console.log('Apple Music status check result:', status);
+      
+      setAppleMusicStatus({ 
+        connected: status.connected, 
+        checking: false,
+        userId: status.userId
+      });
+    } catch (error) {
+      console.error('Error checking Apple Music status:', error);
+      setAppleMusicStatus({ 
+        connected: false, 
+        checking: false,
+        error: error.message 
+      });
+    }
+  };
+
   const checkSpotifyStatus = async () => {
     try {
       if (!user) {
@@ -65,6 +96,7 @@ export default function App() {
   useEffect(() => {
     if (user) {
       checkSpotifyStatus();
+      checkAppleMusicStatus();
     }
   }, [user]);
 
@@ -107,7 +139,9 @@ export default function App() {
           <RequireAuth>
             <DashboardPage 
               spotifyStatus={spotifyStatus}
+              appleMusicStatus={appleMusicStatus}
               onSpotifyUpdate={checkSpotifyStatus}
+              onAppleMusicUpdate={checkAppleMusicStatus}
               user={user}
             />
           </RequireAuth>
