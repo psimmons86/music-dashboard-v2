@@ -5,9 +5,13 @@ export default function NavBar({ user, setUser }) {
   const navigate = useNavigate();
 
   function handleLogOut() {
-    logOut();
-    setUser(null);
-    navigate('/');
+    console.log('Logging out user:', user?.email); // Debug log
+    setUser(null); // Clear user state first
+    localStorage.removeItem('token'); // Clear token
+    localStorage.removeItem('user'); // Clear user data
+    sessionStorage.clear(); // Clear any session data
+    console.log('Storage cleared'); // Debug log
+    navigate('/login'); // Navigate to login page
   }
 
   return (

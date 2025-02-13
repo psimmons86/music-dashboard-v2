@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Music, Disc, Radio, Users2, Clock, Settings } from 'lucide-react';
 import { 
   getProfile, 
   updateProfile, 
-  uploadProfilePicture, 
-  getFavorites, 
-  setFavorites 
+  uploadProfilePicture,
+  getFavorites
 } from '../../services/userService';
-import { 
-  getSpotifyStatus, 
-  disconnectSpotify 
-} from '../../services/spotifyService';
+import { getSpotifyStatus } from '../../services/spotifyService';
 import SpotifyConnect from "../../components/SpotifyConnect/SpotifyConnect";
 import './ProfilePage.css';
 
@@ -33,71 +30,41 @@ export default function ProfilePage({ user }) {
       discogs: { url: '', verified: false },
       vinylVault: { url: '', verified: false },
       lastFm: { url: '', verified: false }
-    },
-    preferences: {
-      privacyLevel: 'public',
-      emailNotifications: true
     }
   });
-  const [favoriteGenres, setFavoriteGenres] = useState([]);
-  const [favoriteMoods, setFavoriteMoods] = useState([]);
-  const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [stats, setStats] = useState({
+    vinylCount: 0,
+    followersCount: 0,
+    listenTime: 0,
+    topGenres: []
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    async function loadProfileData() {
-      try {
-        const [profileResponse, favoritesResponse, spotifyStatus] = await Promise.all([
-          getProfile(),
-          getFavorites(),
-          getSpotifyStatus()
-        ]);
-
-        setProfileData({
-          name: profileResponse.name,
-          bio: profileResponse.bio || '',
-          location: profileResponse.location || '',
-          socialLinks: profileResponse.socialLinks || {
-            discogs: { url: '', verified: false },
-            vinylVault: { url: '', verified: false },
-            lastFm: { url: '', verified: false }
-          },
-          preferences: profileResponse.preferences || {
-            privacyLevel: 'public',
-            emailNotifications: true
-          }
-        });
-
-        setFavoriteGenres(favoritesResponse.favoriteGenres || []);
-        setFavoriteMoods(favoritesResponse.favoriteMoods || []);
-        setSpotifyConnected(spotifyStatus.connected);
-      } catch (err) {
-        setError('Failed to load profile data');
-      }
-    }
-
     loadProfileData();
   }, []);
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
+  async function loadProfileData() {
     try {
-      const updatedProfile = await updateProfile({
-        ...profileData,
-        favoriteGenres,
-        favoriteMoods
+      const [profile, favorites, spotifyStatus] = await Promise.all([
+        getProfile(),
+        getFavorites(),
+        getSpotifyStatus()
+      ]);
+
+      setProfileData(profile);
+      setStats({
+        vinylCount: 142, // Example data
+        followersCount: 89,
+        listenTime: 2460,
+        topGenres: favorites.favoriteGenres || []
       });
-      
-      setProfileData(updatedProfile);
-      setIsEditing(false);
-      setSuccess('Profile updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to update profile');
+      setError('Failed to load profile data');
     }
-  };
+  }
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -112,207 +79,131 @@ export default function ProfilePage({ user }) {
     }
   };
 
-  const handleDisconnectSpotify = async () => {
-    try {
-      await disconnectSpotify();
-      setSpotifyConnected(false);
-      setSuccess('Spotify disconnected');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Failed to disconnect Spotify');
-    }
-  };
-
-  const toggleGenre = (genre) => {
-    setFavoriteGenres(prev => 
-      prev.includes(genre)
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre].slice(0, 5)
-    );
-  };
-
-  const toggleMood = (mood) => {
-    setFavoriteMoods(prev => 
-      prev.includes(mood)
-        ? prev.filter(m => m !== mood)
-        : [...prev, mood].slice(0, 3)
-    );
-  };
-
   return (
-    <div className="profile-page">
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      <section className="profile-section">
-        <h2>Profile Information</h2>
-        
-        <div className="profile-picture-container">
-          <img
-            src={profileData.profilePicture || '/default-profile.png'}
-            alt=""
-            className="profile-picture"
-          />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-            id="profile-picture-input"
-          />
-          <label
-            htmlFor="profile-picture-input"
-            className="profile-picture-overlay"
-          >
-            Change Picture
-          </label>
-        </div>
-
-        {isEditing ? (
-          <form onSubmit={handleProfileUpdate} className="profile-edit-form">
-            <div className="form-group">
-              <label>Name</label>
-              <input
-                type="text"
-                value={profileData.name}
-                onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Bio</label>
-              <textarea
-                value={profileData.bio}
-                onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                rows="4"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Location</label>
-              <input
-                type="text"
-                value={profileData.location}
-                onChange={(e) => setProfileData({...profileData, location: e.target.value})}
-              />
-            </div>
-
-            <div className="music-preferences">
-              <h3>Favorite Genres (Max 5)</h3>
-              <div className="genre-grid">
-                {GENRES.map(genre => (
-                  <label key={genre} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={favoriteGenres.includes(genre)}
-                      onChange={() => toggleGenre(genre)}
-                    />
-                    {genre}
-                  </label>
-                ))}
-              </div>
-
-              <h3>Favorite Moods (Max 3)</h3>
-              <div className="mood-grid">
-                {MOODS.map(mood => (
-                  <label key={mood} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={favoriteMoods.includes(mood)}
-                      onChange={() => toggleMood(mood)}
-                    />
-                    {mood}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Privacy Level</label>
-              <select
-                value={profileData.preferences.privacyLevel}
-                onChange={(e) => setProfileData({
-                  ...profileData, 
-                  preferences: {
-                    ...profileData.preferences, 
-                    privacyLevel: e.target.value
-                  }
-                })}
-              >
-                <option value="public">Public</option>
-                <option value="private">Private</option>
-                <option value="friends">Friends Only</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={profileData.preferences.emailNotifications}
-                  onChange={(e) => setProfileData({
-                    ...profileData, 
-                    preferences: {
-                      ...profileData.preferences, 
-                      emailNotifications: e.target.checked
-                    }
-                  })}
-                />
-                Receive Email Notifications
-              </label>
-            </div>
-
-            <div className="profile-actions">
-              <button type="submit" className="save-btn">
-                Save Changes
-              </button>
-              <button
-                type="button"
-                className="cancel-btn"
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="profile-preview">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="edit-profile-btn"
+    <div className="profile-container">
+      {/* Profile Header */}
+      <div className="profile-header">
+        <div className="vinyl-profile">
+          <div className="vinyl-record">
+            <img
+              src={profileData.profilePicture || '/default-profile.png'}
+              alt=""
+              className="profile-picture"
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              id="profile-picture-input"
+            />
+            <label
+              htmlFor="profile-picture-input"
+              className="profile-picture-overlay"
             >
-              Edit Profile
-            </button>
-            <h3>{profileData.name}</h3>
+              Change Picture
+            </label>
+          </div>
+          <div className="profile-info">
+            <h1>{profileData.name}</h1>
             {profileData.location && (
               <p className="location">📍 {profileData.location}</p>
             )}
-            {profileData.bio && (
-              <p className="bio">{profileData.bio}</p>
-            )}
+            <p className="bio">{profileData.bio}</p>
           </div>
-        )}
-      </section>
-
-      <section className="profile-section">
-        <h2>Connected Services</h2>
-        <div className="spotify-connection">
-          {spotifyConnected ? (
-            <div className="spotify-status connected">
-              <span>✓ Spotify Connected</span>
-              <button
-                onClick={handleDisconnectSpotify}
-                className="disconnect-btn"
-              >
-                Disconnect Spotify
-              </button>
-            </div>
-          ) : (
-            <SpotifyConnect />
-          )}
         </div>
-      </section>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <Disc className="stat-icon" />
+          <div className="stat-content">
+            <h3>Vinyl Collection</h3>
+            <p className="stat-value">{stats.vinylCount}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <Users2 className="stat-icon" />
+          <div className="stat-content">
+            <h3>Followers</h3>
+            <p className="stat-value">{stats.followersCount}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <Clock className="stat-icon" />
+          <div className="stat-content">
+            <h3>Listen Time</h3>
+            <p className="stat-value">{Math.floor(stats.listenTime / 60)}h {stats.listenTime % 60}m</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <Radio className="stat-icon" />
+          <div className="stat-content">
+            <h3>Top Genre</h3>
+            <p className="stat-value">{stats.topGenres[0] || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="profile-grid">
+        {/* Recent Activity */}
+        <div className="profile-section activity-feed">
+          <h2>Recent Activity</h2>
+          <div className="timeline">
+            {[1,2,3].map(i => (
+              <div key={i} className="timeline-item">
+                <div className="timeline-icon">
+                  <Music size={14} />
+                </div>
+                <div className="timeline-content">
+                  <h4>Added new vinyl to collection</h4>
+                  <p>Pink Floyd - Dark Side of the Moon</p>
+                  <span className="timeline-date">2 days ago</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Connected Services */}
+        <div className="profile-section services-grid">
+          <h2>Connected Services</h2>
+          <div className="service-cards">
+            <div className="service-card spotify">
+              <img src="/spotify-icon.png" alt="Spotify" className="service-icon" />
+              <div className="service-info">
+                <h3>Spotify</h3>
+                <p>Connected</p>
+              </div>
+            </div>
+            <div className="service-card apple-music">
+              <img src="/apple-music-icon.png" alt="Apple Music" className="service-icon" />
+              <div className="service-info">
+                <h3>Apple Music</h3>
+                <p>Not Connected</p>
+              </div>
+            </div>
+            <div className="service-card discogs">
+              <img src="/discogs-icon.png" alt="Discogs" className="service-icon" />
+              <div className="service-info">
+                <h3>Discogs</h3>
+                <p>Connected</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Settings Button */}
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="settings-button"
+        >
+          <Settings size={16} />
+          Edit Profile
+        </button>
+      </div>
     </div>
   );
 }

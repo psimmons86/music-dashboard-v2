@@ -3,16 +3,39 @@ const User = require('../models/user');
 
 async function getStatus(req, res) {
   try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    // Check session first for non-logged-in users
+    if (!req.user && req.session && req.session.appleMusicToken) {
+      return res.json({
+        success: true,
+        data: {
+          connected: true,
+          isTemporary: true
+        }
+      });
     }
 
+    // For logged-in users, check the database
+    if (req.user) {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          connected: Boolean(user.appleMusicToken),
+          userId: user._id,
+          isTemporary: false
+        }
+      });
+    }
+
+    // No connection found
     res.json({
       success: true,
       data: {
-        connected: Boolean(user.appleMusicToken && user.appleMusicUserToken),
-        userId: user._id
+        connected: false
       }
     });
   } catch (error) {
@@ -23,8 +46,7 @@ async function getStatus(req, res) {
 
 async function getMusicKitToken(req, res) {
   try {
-    // Read private key from environment variable or file
-    const privateKey = process.env.APPLE_MUSIC_PRIVATE_KEY;
+    const privateKey = process.env.APPLE_MUSIC_PRIVATE_KEY.replace(/\\n/g, '\n');
     const keyId = process.env.APPLE_MUSIC_KEY_ID;
     const teamId = process.env.APPLE_MUSIC_TEAM_ID;
 
@@ -37,8 +59,6 @@ async function getMusicKitToken(req, res) {
       algorithm: 'ES256',
       expiresIn: '24h',
       issuer: teamId,
-      audience: 'https://apple-music.com',
-      subject: keyId,
       header: {
         alg: 'ES256',
         kid: keyId
@@ -59,6 +79,22 @@ async function saveUserToken(req, res) {
       return res.status(400).json({ error: 'Music user token is required' });
     }
 
+    // Store token in session instead of database if not logged in
+    if (!req.user) {
+      if (!req.session) {
+        req.session = {};
+      }
+      req.session.appleMusicToken = musicUserToken;
+      return res.json({ 
+        success: true, 
+        message: 'Apple Music token saved to session',
+        data: {
+          isTemporary: true
+        }
+      });
+    }
+
+    // If logged in, save to user account
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -67,7 +103,14 @@ async function saveUserToken(req, res) {
     user.appleMusicToken = musicUserToken;
     await user.save();
 
-    res.json({ success: true, message: 'Apple Music token saved successfully' });
+    res.json({ 
+      success: true, 
+      message: 'Apple Music token saved successfully',
+      data: {
+        userId: user._id,
+        isTemporary: false
+      }
+    });
   } catch (error) {
     console.error('Error saving Apple Music token:', error);
     res.status(500).json({ error: 'Failed to save Apple Music token' });

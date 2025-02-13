@@ -3,20 +3,14 @@ const router = express.Router();
 const appleMusicCtrl = require('../controllers/applemusic');
 const ensureLoggedIn = require('../middleware/ensureLoggedIn');
 
-// Public routes
+// Public routes (no middleware)
 router.get('/token', appleMusicCtrl.getMusicKitToken);
-
-// Protected routes
-router.use(ensureLoggedIn);
-
-// Get Apple Music connection status
-router.get('/status', appleMusicCtrl.getStatus);
-
-// Save user's Apple Music token
 router.post('/user-token', appleMusicCtrl.saveUserToken);
-
-// Disconnect from Apple Music
+router.get('/status', appleMusicCtrl.getStatus);
 router.post('/disconnect', appleMusicCtrl.disconnect);
+
+// Protected routes (with middleware)
+router.use(ensureLoggedIn);
 
 // Get personalized recommendations
 router.get('/recommendations', appleMusicCtrl.getRecommendations);

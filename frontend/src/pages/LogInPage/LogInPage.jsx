@@ -23,11 +23,23 @@ export default function LogInPage({ setUser }) {
     evt.preventDefault();
     setErrorMsg('');
     try {
+      console.log('Submitting login form:', formData.email); // Debug log
       const user = await authService.logIn(formData);
       if (user) {
+        console.log('Login successful, user:', user); // Debug log
         setUser(user);
-        navigate(from, { replace: true });
+        // Verify token is stored
+        const token = localStorage.getItem('token');
+        console.log('Token stored:', token ? 'Yes' : 'No'); // Debug log
+        // Navigate after ensuring token is stored
+        if (token) {
+          console.log('Navigating to:', from); // Debug log
+          navigate(from, { replace: true });
+        } else {
+          throw new Error('Token not stored after login');
+        }
       } else {
+        console.log('Login failed - no user returned'); // Debug log
         setErrorMsg('Login failed - please try again');
       }
     } catch (err) {

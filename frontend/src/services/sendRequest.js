@@ -11,15 +11,19 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
   const options = { method };
   options.headers = {};
   
-  // Add token if available and not a login/signup request
-  if (!url.includes('/login') && !url.includes('/signup')) {
-    const token = getToken();
-    if (!token) {
-      // If no token is available for a protected route, handle as auth error
-      handleAuthError({ status: 401 });
-      throw new Error('No authentication token available');
-    }
+  // Add token if available
+  const token = getToken();
+  console.log('Request to:', url, 'Token:', token ? 'Present' : 'None'); // Debug log
+  
+  if (token) {
     options.headers.Authorization = `Bearer ${token}`;
+  }
+  // Only require token for protected routes
+  else if (!url.includes('/login') && !url.includes('/signup') && !url.includes('/applemusic/token') && !url.includes('/applemusic/user-token')) {
+    console.log('Protected route requires token:', url); // Debug log
+    const error = new Error('No authentication token available');
+    error.status = 401;
+    throw error;
   }
 
   // Add content-type and body if needed
@@ -38,9 +42,10 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
     options.signal = controller.signal;
 
-    console.log(`Sending ${method} request to ${url}`);
+    console.log(`Sending ${method} request to ${url}`, options); // Debug log
     const res = await fetch(url, options);
     clearTimeout(timeoutId);
+    console.log('Response status:', res.status); // Debug log
     
     // Handle no content response
     if (res.status === 204) {
@@ -66,10 +71,11 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
         return sendRequest(url, method, payload, retryCount + 1);
       }
 
-      // Handle authentication errors immediately
-      if (res.status === 401 && !url.includes('/login')) {
-        handleAuthError({ status: 401, message: json.message });
-        throw new Error(json.message || 'Authentication failed');
+      // Handle authentication errors for protected routes
+      if (res.status === 401 && !url.includes('/login') && !url.includes('/signup') && !url.includes('/applemusic/token') && !url.includes('/applemusic/user-token')) {
+        const error = new Error(json.message || 'Authentication failed');
+        error.status = 401;
+        throw error;
       }
 
       const error = new Error(json.message || json.error || 'Request failed');
@@ -92,9 +98,10 @@ export default async function sendRequest(url, method = 'GET', payload = null, r
       return sendRequest(url, method, payload, retryCount + 1);
     }
 
-    // Handle authentication errors
-    if (err.status === 401 && !url.includes('/login')) {
-      handleAuthError(err);
+    // Handle authentication errors for protected routes
+    if (err.status === 401 && !url.includes('/login') && !url.includes('/signup') && !url.includes('/applemusic/token') && !url.includes('/applemusic/user-token')) {
+      // Let App.jsx handle the auth error and redirect
+      throw err;
     }
 
     throw err;

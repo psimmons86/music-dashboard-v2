@@ -88,10 +88,12 @@ const authController = {
   async login(req, res) {
     try {
       const { email, password } = req.body;
+      console.log('Login attempt for:', email); // Debug log
 
       try {
         // Input validation
         if (!email || !password) {
+          console.log('Missing email or password'); // Debug log
           return res.status(400).json({ 
             message: 'Please provide email and password' 
           });
@@ -100,6 +102,7 @@ const authController = {
         // Find user by email (case-insensitive)
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
+          console.log('User not found:', email); // Debug log
           return res.status(401).json({ 
             message: 'Invalid email or password' 
           });
@@ -108,6 +111,7 @@ const authController = {
         // Verify password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
+          console.log('Invalid password for:', email); // Debug log
           return res.status(401).json({ 
             message: 'Invalid email or password' 
           });
@@ -115,12 +119,14 @@ const authController = {
 
         // Generate JWT
         const token = createJWT(user);
+        console.log('Generated token for:', email); // Debug log
 
         // Prepare user response (remove sensitive data)
         const userResponse = user.toObject();
         delete userResponse.password;
 
         // Send successful response
+        console.log('Login successful for:', email); // Debug log
         res.json({
           user: userResponse,
           token

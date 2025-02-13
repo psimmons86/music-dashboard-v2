@@ -30,8 +30,13 @@ export default function App() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
+    console.log('Initial user state:', currentUser); // Debug log
     return currentUser;
   });
+
+  useEffect(() => {
+    console.log('User state changed:', user); // Debug log
+  }, [user]);
 
   const [spotifyStatus, setSpotifyStatus] = useState({ 
     connected: false,
@@ -102,6 +107,7 @@ export default function App() {
 
   // Enhanced setUser function to handle localStorage
   const handleSetUser = (userData) => {
+    console.log('Setting user:', userData); // Debug log
     if (userData) {
       localStorage.setItem('user', JSON.stringify(userData));
     } else {
@@ -112,19 +118,61 @@ export default function App() {
   };
 
   const RequireAuth = ({ children }) => {
-    const currentUser = authService.getUser(); // Check token validity
-    
-    if (!currentUser) {
-      // If token is invalid, clear user state and redirect
-      handleSetUser(null);
+    const [isAuthenticating, setIsAuthenticating] = useState(true);
+    const [authError, setAuthError] = useState(null);
+
+    useEffect(() => {
+      const checkAuth = async () => {
+        try {
+          console.log('RequireAuth - Checking auth...'); // Debug log
+          const currentUser = authService.getUser();
+          console.log('RequireAuth - Current user:', currentUser); // Debug log
+
+          if (!currentUser) {
+            console.log('RequireAuth - No current user, clearing state'); // Debug log
+            handleSetUser(null);
+            // Only redirect if not already on login or signup page
+            if (location.pathname !== '/login' && location.pathname !== '/signup') {
+              console.log('RequireAuth - Redirecting to login'); // Debug log
+              setAuthError('auth');
+            }
+          } else if (JSON.stringify(currentUser) !== JSON.stringify(user)) {
+            // Ensure user state is in sync with token
+            console.log('RequireAuth - Syncing user state'); // Debug log
+            handleSetUser(currentUser);
+          }
+        } catch (err) {
+          console.error('RequireAuth - Auth check failed:', err);
+          setAuthError(err.message);
+        } finally {
+          setIsAuthenticating(false);
+        }
+      };
+
+      checkAuth();
+    }, [location.pathname]);
+
+    if (isAuthenticating) {
+      return (
+        <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent"></div>
+        </div>
+      );
+    }
+
+    if (authError === 'auth') {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Ensure user state is in sync with token
-    if (JSON.stringify(currentUser) !== JSON.stringify(user)) {
-      handleSetUser(currentUser);
+    if (authError) {
+      return (
+        <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+          <div className="text-red-500">Authentication error. Please try logging in again.</div>
+        </div>
+      );
     }
 
+    console.log('RequireAuth - Rendering children'); // Debug log
     return children;
   };
 

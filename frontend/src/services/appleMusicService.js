@@ -14,8 +14,12 @@ export async function getAppleMusicStatus() {
 
 export async function getMusicKitToken() {
   try {
-    const response = await sendRequest(`${BASE_URL}/token`);
-    return response.data.token;
+    const response = await fetch(`${BASE_URL}/token`);
+    if (!response.ok) {
+      throw new Error('Failed to get MusicKit token');
+    }
+    const data = await response.json();
+    return data.data.token;
   } catch (error) {
     console.error('Error getting MusicKit token:', error);
     throw error;

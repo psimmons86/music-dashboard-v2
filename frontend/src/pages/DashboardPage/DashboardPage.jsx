@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import { Users, Music, FileText, Crown, BarChart2, Disc, Album } from 'lucide-react';
+import { Users, Music, FileText, Crown, BarChart2, Disc, Album, Settings } from 'lucide-react';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './DashboardPage.css';
@@ -71,6 +71,8 @@ export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpoti
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [showPlaylistSettings, setShowPlaylistSettings] = useState(false);
+  const [showStatsSettings, setShowStatsSettings] = useState(false);
   const [stats, setStats] = useState({
     topArtists: [],
     topAlbums: [],
@@ -88,36 +90,45 @@ export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpoti
 
   const isMusicConnected = spotifyStatus?.connected || appleMusicStatus?.connected;
 
-  const fetchPosts = useCallback(async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setError('');
-      const postsData = await postService.index();
+      setIsLoading(true);
+
+      // Batch API calls together
+      const promises = [postService.index()];
+      
+      // Only fetch stats if music service is connected
+      if (isMusicConnected) {
+        promises.push(playlistService.getUserStats());
+      }
+
+      const [postsData, statsData] = await Promise.all(promises);
+      
       setPosts(postsData);
+      if (statsData) {
+        setStats(statsData);
+      }
     } catch (err) {
-      console.error('Error loading posts:', err);
-      setError('Failed to load posts. Please refresh the page to try again.');
+      console.error('Error loading dashboard data:', err);
+      // Only set error if it's not an auth error (to prevent duplicate redirects)
+      if (!err.message?.includes('authentication') && err.status !== 401) {
+        setError('Failed to load some dashboard data. Please refresh to try again.');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        if (isMusicConnected) {
-          const statsData = await playlistService.getUserStats();
-          setStats(statsData);
-        }
-      } catch (err) {
-        console.error('Error fetching stats:', err);
-      }
-    }
-    fetchStats();
   }, [isMusicConnected]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Close settings panels when music service connection changes
+  useEffect(() => {
+    setShowPlaylistSettings(false);
+    setShowStatsSettings(false);
+  }, [spotifyStatus?.connected, appleMusicStatus?.connected]);
 
   const handleCreatePost = async (postData) => {
     try {
@@ -234,16 +245,44 @@ export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpoti
               <DashboardItem
                 title="Playlist Generator"
                 icon={Music}
+                headerActions={
+                  isMusicConnected && (
+                    <button
+                      onClick={() => setShowPlaylistSettings(true)}
+                      className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Change Service
+                    </button>
+                  )
+                }
               >
                 {isMusicConnected ? (
-                  <PlaylistCard
-                    title="Create Daily Mix"
-                    actionButtonText="Generate Playlist"
-                    loadingText="Creating your mix..."
-                    onPlaylistCreated={(playlist) => {
-                      console.log('Playlist created:', playlist);
-                    }}
-                  />
+                  showPlaylistSettings ? (
+                    <div className="text-center">
+                      <button
+                        onClick={() => setShowPlaylistSettings(false)}
+                        className="mb-4 text-sm text-gray-600 hover:text-gray-800"
+                      >
+                        ← Back to Playlist Generator
+                      </button>
+                      <MusicServiceSelection 
+                        onSpotifyUpdate={onSpotifyUpdate}
+                        onAppleMusicUpdate={onAppleMusicUpdate}
+                        spotifyStatus={spotifyStatus}
+                        appleMusicStatus={appleMusicStatus}
+                      />
+                    </div>
+                  ) : (
+                    <PlaylistCard
+                      title="Create Daily Mix"
+                      actionButtonText="Generate Playlist"
+                      loadingText="Creating your mix..."
+                      onPlaylistCreated={(playlist) => {
+                        console.log('Playlist created:', playlist);
+                      }}
+                    />
+                  )
                 ) : (
                   <div className="text-center">
                     <p className="text-gray-600 text-sm mb-6">
@@ -252,6 +291,8 @@ export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpoti
                     <MusicServiceSelection 
                       onSpotifyUpdate={onSpotifyUpdate}
                       onAppleMusicUpdate={onAppleMusicUpdate}
+                      spotifyStatus={spotifyStatus}
+                      appleMusicStatus={appleMusicStatus}
                     />
                   </div>
                 )}
@@ -263,75 +304,103 @@ export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpoti
               <DashboardItem
                 title="Music Stats"
                 icon={BarChart2}
+                headerActions={
+                  isMusicConnected && (
+                    <button
+                      onClick={() => setShowStatsSettings(true)}
+                      className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Change Service
+                    </button>
+                  )
+                }
               >
                 {isMusicConnected ? (
-                  <div className="space-y-6">
-                    {/* Top Artists */}
-                    <div className="space-y-3">
-                      <h3 className="text-emerald-800 font-medium flex items-center gap-2">
-                        <Music className="h-4 w-4" />
-                        Top Artists
-                      </h3>
-                      <div className="space-y-2">
-                        {stats.topArtists && stats.topArtists.length > 0 ? (
-                          <ul className="space-y-2">
-                            {stats.topArtists.map((artist, index) => (
-                              <li key={index} className="text-sm text-gray-600 flex items-center justify-between border-b border-gray-100 pb-2">
-                                <span>{artist.name}</span>
-                                <span className="text-xs text-emerald-600 font-medium">#{index + 1}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-gray-500">Loading artist data...</p>
-                        )}
-                      </div>
+                  showStatsSettings ? (
+                    <div className="text-center">
+                      <button
+                        onClick={() => setShowStatsSettings(false)}
+                        className="mb-4 text-sm text-gray-600 hover:text-gray-800"
+                      >
+                        ← Back to Stats
+                      </button>
+                      <MusicServiceSelection 
+                        onSpotifyUpdate={onSpotifyUpdate}
+                        onAppleMusicUpdate={onAppleMusicUpdate}
+                        spotifyStatus={spotifyStatus}
+                        appleMusicStatus={appleMusicStatus}
+                      />
                     </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Top Artists */}
+                      <div className="space-y-3">
+                        <h3 className="text-emerald-800 font-medium flex items-center gap-2">
+                          <Music className="h-4 w-4" />
+                          Top Artists
+                        </h3>
+                        <div className="space-y-2">
+                          {stats.topArtists && stats.topArtists.length > 0 ? (
+                            <ul className="space-y-2">
+                              {stats.topArtists.map((artist, index) => (
+                                <li key={index} className="text-sm text-gray-600 flex items-center justify-between border-b border-gray-100 pb-2">
+                                  <span>{artist.name}</span>
+                                  <span className="text-xs text-emerald-600 font-medium">#{index + 1}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-500">Loading artist data...</p>
+                          )}
+                        </div>
+                      </div>
 
-                    {/* Top Albums */}
-                    <div className="space-y-3">
-                      <h3 className="text-emerald-800 font-medium flex items-center gap-2">
-                        <Disc className="h-4 w-4" />
-                        Top Albums
-                      </h3>
-                      <div className="space-y-2">
-                        {stats.topAlbums && stats.topAlbums.length > 0 ? (
-                          <ul className="space-y-2">
-                            {stats.topAlbums.map((album, index) => (
-                              <li key={index} className="text-sm text-gray-600 flex items-center justify-between border-b border-gray-100 pb-2">
-                                <span>{album.name}</span>
-                                <span className="text-xs text-emerald-600 font-medium">#{index + 1}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-gray-500">Loading album data...</p>
-                        )}
+                      {/* Top Albums */}
+                      <div className="space-y-3">
+                        <h3 className="text-emerald-800 font-medium flex items-center gap-2">
+                          <Disc className="h-4 w-4" />
+                          Top Albums
+                        </h3>
+                        <div className="space-y-2">
+                          {stats.topAlbums && stats.topAlbums.length > 0 ? (
+                            <ul className="space-y-2">
+                              {stats.topAlbums.map((album, index) => (
+                                <li key={index} className="text-sm text-gray-600 flex items-center justify-between border-b border-gray-100 pb-2">
+                                  <span>{album.name}</span>
+                                  <span className="text-xs text-emerald-600 font-medium">#{index + 1}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-500">Loading album data...</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Top Genres */}
-                    <div className="space-y-3">
-                      <h3 className="text-emerald-800 font-medium flex items-center gap-2">
-                        <BarChart2 className="h-4 w-4" />
-                        Top Genres
-                      </h3>
-                      <div className="space-y-2">
-                        {stats.topGenres && stats.topGenres.length > 0 ? (
-                          <ul className="space-y-2">
-                            {stats.topGenres.map((genre, index) => (
-                              <li key={index} className="text-sm text-gray-600 flex items-center justify-between border-b border-gray-100 pb-2">
-                                <span>{genre.name}</span>
-                                <span className="text-xs text-emerald-600 font-medium">#{index + 1}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-gray-500">Loading genre data...</p>
-                        )}
+                      {/* Top Genres */}
+                      <div className="space-y-3">
+                        <h3 className="text-emerald-800 font-medium flex items-center gap-2">
+                          <BarChart2 className="h-4 w-4" />
+                          Top Genres
+                        </h3>
+                        <div className="space-y-2">
+                          {stats.topGenres && stats.topGenres.length > 0 ? (
+                            <ul className="space-y-2">
+                              {stats.topGenres.map((genre, index) => (
+                                <li key={index} className="text-sm text-gray-600 flex items-center justify-between border-b border-gray-100 pb-2">
+                                  <span>{genre.name}</span>
+                                  <span className="text-xs text-emerald-600 font-medium">#{index + 1}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-500">Loading genre data...</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )
                 ) : (
                   <div className="text-center">
                     <p className="text-gray-600 text-sm mb-6">
@@ -340,6 +409,8 @@ export default function DashboardPage({ spotifyStatus, appleMusicStatus, onSpoti
                     <MusicServiceSelection 
                       onSpotifyUpdate={onSpotifyUpdate}
                       onAppleMusicUpdate={onAppleMusicUpdate}
+                      spotifyStatus={spotifyStatus}
+                      appleMusicStatus={appleMusicStatus}
                     />
                   </div>
                 )}

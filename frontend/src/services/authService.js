@@ -4,15 +4,23 @@ const BASE_URL = '/api/auth';
 
 export function getToken() {
   const token = localStorage.getItem('token');
-  if (!token) return null;
+  if (!token) {
+    console.log('No token found in localStorage'); // Debug log
+    return null;
+  }
   
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
+    console.log('Token expiration:', new Date(payload.exp * 1000)); // Debug log
+    console.log('Current time:', new Date()); // Debug log
+    
     if (payload.exp * 1000 < Date.now()) {
+      console.log('Token expired'); // Debug log
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       return null;
     }
+    console.log('Token valid, payload:', payload); // Debug log
     return token;
   } catch (err) {
     console.error('Error parsing token:', err);
@@ -41,17 +49,21 @@ export function getUser() {
 
 export async function logIn(credentials) {
   try {
+    console.log('Attempting login for:', credentials.email); // Debug log
     const response = await sendRequest(`${BASE_URL}/login`, 'POST', credentials);
     
     if (!response.token || !response.user) {
+      console.log('Invalid response from server:', response); // Debug log
       throw new Error('Invalid response from server');
     }
     
+    console.log('Login successful, storing token and user'); // Debug log
     localStorage.setItem('token', response.token);
     localStorage.setItem('user', JSON.stringify(response.user));
     
     return response.user;
   } catch (err) {
+    console.error('Login error:', err); // Debug log
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     if (err.status === 401) {
@@ -66,7 +78,7 @@ export function logOut(redirectUrl = '/login') {
   localStorage.removeItem('user');
   sessionStorage.clear();
   
-  if (redirectUrl) {
+  if (redirectUrl && window.location.pathname !== '/login') {
     const returnUrl = encodeURIComponent(redirectUrl);
     window.location.replace(`/login?returnUrl=${returnUrl}`);
   }
@@ -112,8 +124,10 @@ export function checkAuthStatus() {
 export function handleAuthError(error) {
   if (error.status === 401 || !checkAuthStatus()) {
     const currentPath = window.location.pathname;
-    logOut(currentPath);
-    return true;
+    if (currentPath !== '/login' && currentPath !== '/signup') {
+      logOut(currentPath);
+      return true;
+    }
   }
   return false;
 }
