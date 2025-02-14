@@ -56,13 +56,15 @@ export async function getRecommendations() {
   }
 }
 
-export async function getUserStats() {
+export async function getStats() {
   try {
+    console.log('Frontend: Fetching Apple Music stats...');
     const response = await sendRequest(`${BASE_URL}/stats`);
+    console.log('Frontend: Apple Music stats response:', response);
     return response.data;
   } catch (error) {
-    console.error('Error getting Apple Music user stats:', error);
-    throw error;
+    console.error('Frontend: Error fetching Apple Music stats:', error);
+    throw new Error('Failed to fetch Apple Music stats. Please try again.');
   }
 }
 

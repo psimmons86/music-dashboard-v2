@@ -157,7 +157,7 @@ async function getRecommendations(req, res) {
   }
 }
 
-async function getUserStats(req, res) {
+async function getStats(req, res) {
   try {
     const user = await User.findById(req.user._id);
     if (!user || !user.appleMusicToken) {
@@ -167,15 +167,16 @@ async function getUserStats(req, res) {
     // Here you would use the Apple Music API to get user stats
     // This is a placeholder that would need to be implemented with actual Apple Music API calls
     const stats = {
-      topArtists: [],
-      topAlbums: [],
-      topGenres: []
+      totalPlays: 1250,
+      hoursListened: 75.5,
+      topGenre: 'Alternative Rock',
+      avgDailyPlays: 42.3
     };
 
     res.json({ success: true, data: stats });
   } catch (error) {
-    console.error('Error getting Apple Music user stats:', error);
-    res.status(500).json({ error: 'Failed to get user stats' });
+    console.error('Error getting Apple Music stats:', error);
+    res.status(500).json({ error: 'Failed to get stats' });
   }
 }
 
@@ -185,5 +186,5 @@ module.exports = {
   saveUserToken,
   disconnect,
   getRecommendations,
-  getUserStats
+  getStats
 };

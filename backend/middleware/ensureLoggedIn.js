@@ -1,5 +1,5 @@
 module.exports = function(req, res, next) {
-  const publicRoutes = ['/api/auth', '/api/news'];
+  const publicRoutes = ['/api/auth', '/api/news', '/api/blogs', '/api/posts'];
   if (publicRoutes.some(route => req.path.startsWith(route))) {
     return next();
   }

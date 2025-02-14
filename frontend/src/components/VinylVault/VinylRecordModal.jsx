@@ -1,22 +1,39 @@
 import { useState } from 'react';
-import { Search, X, Loader2 } from 'lucide-react';
-import * as vinylService from '../../services/vinylService';
+import { X } from 'lucide-react';
+
+const CONDITIONS = [
+  'Mint',
+  'Near Mint',
+  'Excellent',
+  'Very Good Plus',
+  'Very Good',
+  'Good',
+  'Fair',
+  'Poor'
+];
 
 export default function VinylRecordModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     title: '',
     artist: '',
-    releaseYear: '',
+    year: new Date().getFullYear(),
     genre: '',
-    condition: 'Near Mint',
-    notes: '',
-    coverImage: '',
-    discogsId: ''
+    condition: 'Very Good Plus',
+    imageUrl: ''
   });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+    setFormData({
+      title: '',
+      artist: '',
+      year: new Date().getFullYear(),
+      genre: '',
+      condition: 'Very Good Plus',
+      imageUrl: ''
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,227 +43,132 @@ export default function VinylRecordModal({ isOpen, onClose, onSubmit }) {
     }));
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    try {
-      setIsSearching(true);
-      setError('');
-      const results = await vinylService.searchDiscogs(searchQuery);
-      setSearchResults(results.results || []);
-    } catch (err) {
-      console.error('Search error:', err);
-      setError('Failed to search Discogs');
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSelectResult = (result) => {
-    setFormData({
-      ...formData,
-      title: result.title,
-      artist: result.artist || '',
-      releaseYear: result.year || '',
-      genre: result.genre?.[0] || '',
-      coverImage: result.cover_image || '',
-      discogsId: result.id
-    });
-    setSearchResults([]);
-    setSearchQuery('');
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Add Vinyl Record</h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-lg font-semibold text-gray-900">Add Record</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-400 hover:text-gray-500"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-6">
-          <div className="flex gap-2">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+              Title
+            </label>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Discogs..."
-              className="flex-1 p-2 border rounded-lg"
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              id="title"
+              name="title"
+              required
+              value={formData.title}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
             />
-            <button
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {isSearching ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Search className="h-5 w-5" />
-              )}
-            </button>
           </div>
 
-          {searchResults.length > 0 && (
-            <div className="mt-2 border rounded-lg divide-y max-h-48 overflow-y-auto">
-              {searchResults.map(result => (
-                <button
-                  key={result.id}
-                  onClick={() => handleSelectResult(result)}
-                  className="w-full p-2 text-left hover:bg-gray-50 flex items-center gap-3"
-                >
-                  {result.thumb && (
-                    <img
-                      src={result.thumb}
-                      alt={result.title}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  )}
-                  <div>
-                    <div className="font-medium">{result.title}</div>
-                    <div className="text-sm text-gray-500">
-                      {result.year && `${result.year} • `}
-                      {result.genre?.[0]}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+          <div>
+            <label htmlFor="artist" className="block text-sm font-medium text-gray-700">
+              Artist
+            </label>
+            <input
+              type="text"
+              id="artist"
+              name="artist"
+              required
+              value={formData.artist}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+            />
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Artist *
-              </label>
-              <input
-                type="text"
-                name="artist"
-                value={formData.artist}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Release Year
+              <label htmlFor="year" className="block text-sm font-medium text-gray-700">
+                Year
               </label>
               <input
                 type="number"
-                name="releaseYear"
-                value={formData.releaseYear}
+                id="year"
+                name="year"
+                required
+                min="1900"
+                max={new Date().getFullYear()}
+                value={formData.year}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="genre" className="block text-sm font-medium text-gray-700">
                 Genre
               </label>
               <input
                 type="text"
+                id="genre"
                 name="genre"
+                required
                 value={formData.genre}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Condition
-              </label>
-              <select
-                name="condition"
-                value={formData.condition}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg"
-              >
-                <option value="Mint">Mint</option>
-                <option value="Near Mint">Near Mint</option>
-                <option value="Very Good Plus">Very Good Plus</option>
-                <option value="Very Good">Very Good</option>
-                <option value="Good">Good</option>
-                <option value="Fair">Fair</option>
-                <option value="Poor">Poor</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cover Image URL
-              </label>
-              <input
-                type="text"
-                name="coverImage"
-                value={formData.coverImage}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-lg"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
+            <label htmlFor="condition" className="block text-sm font-medium text-gray-700">
+              Condition
             </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
+            <select
+              id="condition"
+              name="condition"
+              required
+              value={formData.condition}
               onChange={handleChange}
-              rows="3"
-              className="w-full p-2 border rounded-lg"
-            ></textarea>
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              {CONDITIONS.map(condition => (
+                <option key={condition} value={condition}>
+                  {condition}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div>
+            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
+              Cover Image URL (optional)
+            </label>
+            <input
+              type="url"
+              id="imageUrl"
+              name="imageUrl"
+              value={formData.imageUrl}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="https://..."
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
             >
               Add Record
             </button>

@@ -15,6 +15,7 @@ router.post('/disconnect', checkToken, spotifyCtrl.disconnect);
 router.use(checkToken);
 router.use(ensureLoggedIn);
 
+router.get('/stats', spotifyCtrl.stats);
 router.post('/playlist', playlistCtrl.createPlaylist);
 
 module.exports = router;

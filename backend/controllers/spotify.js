@@ -41,7 +41,75 @@ async function refreshUserToken(user) {
   }
 }
 
+// Helper function to calculate average daily plays
+async function calculateAverageDailyPlays(spotifyApi) {
+  const recentTracks = await spotifyApi.getMyRecentlyPlayedTracks({ limit: 50 });
+  if (!recentTracks.body.items.length) return 0;
+
+  const now = new Date();
+  const oldestTrackDate = new Date(recentTracks.body.items[recentTracks.body.items.length - 1].played_at);
+  const daysDifference = (now - oldestTrackDate) / (1000 * 60 * 60 * 24);
+  
+  return recentTracks.body.items.length / daysDifference;
+}
+
 const spotifyController = {
+  async stats(req, res) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await User.findById(req.user._id);
+      if (!user || !user.spotifyAccessToken) {
+        return res.status(401).json({ error: 'Not connected to Spotify' });
+      }
+
+      // Check if token needs refresh
+      if (new Date() > new Date(user.spotifyTokenExpiry)) {
+        await refreshUserToken(user);
+      }
+
+      spotifyApi.setAccessToken(user.spotifyAccessToken);
+
+      // Get user's top tracks and artists
+      const [topTracks, topArtists] = await Promise.all([
+        spotifyApi.getMyTopTracks({ limit: 50, time_range: 'short_term' }),
+        spotifyApi.getMyTopArtists({ limit: 50, time_range: 'short_term' })
+      ]);
+
+      // Calculate total plays (estimate from top tracks)
+      const totalPlays = topTracks.body.items.reduce((sum, track) => sum + track.popularity, 0);
+
+      // Calculate hours listened (estimate: average song length * number of plays)
+      const avgSongLength = 3.5; // minutes
+      const hoursListened = (totalPlays * avgSongLength) / 60;
+
+      // Get top genre from top artists
+      const genreCounts = {};
+      topArtists.body.items.forEach(artist => {
+        artist.genres.forEach(genre => {
+          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        });
+      });
+      const topGenre = Object.entries(genreCounts)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unknown';
+
+      // Calculate average daily plays
+      const avgDailyPlays = await calculateAverageDailyPlays(spotifyApi);
+
+      res.json({
+        totalPlays,
+        hoursListened,
+        topGenre,
+        avgDailyPlays
+      });
+    } catch (error) {
+      console.error('Error fetching Spotify stats:', error);
+      res.status(500).json({ error: 'Failed to fetch Spotify stats' });
+    }
+  },
+
   async connect(req, res) {
     try {
       if (!req.user) {

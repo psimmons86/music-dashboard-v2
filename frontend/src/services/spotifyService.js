@@ -74,6 +74,18 @@ export async function getSpotifyStatus() {
   }
 }
 
+export async function getStats() {
+  try {
+    console.log('Frontend: Fetching Spotify stats...');
+    const response = await sendRequest(`${BASE_URL}/stats`);
+    console.log('Frontend: Spotify stats response:', response);
+    return response;
+  } catch (error) {
+    console.error('Frontend: Error fetching Spotify stats:', error);
+    throw new Error('Failed to fetch Spotify stats. Please try again.');
+  }
+}
+
 export async function disconnectSpotify() {
   try {
     console.log('Frontend: Disconnecting from Spotify...');

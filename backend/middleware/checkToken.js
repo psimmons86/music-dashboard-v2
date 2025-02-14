@@ -34,8 +34,12 @@ module.exports = function(req, res, next) {
         console.log('No user in token payload'); // Debug log
         return res.status(401).json({ message: 'Invalid token payload' });
       }
+      if (!decoded.user || !decoded.user._id) {
+        console.log('Invalid user data in token:', decoded); // Debug log
+        return res.status(401).json({ message: 'Invalid token payload' });
+      }
       req.user = decoded.user;
-      console.log('Token verified for user:', decoded.user.email); // Debug log
+      console.log('Token verified for user:', decoded.user._id); // Debug log
       next();
     } catch (err) {
       console.error('Token verification failed:', err);

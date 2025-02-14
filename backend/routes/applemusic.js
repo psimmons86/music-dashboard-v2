@@ -16,6 +16,6 @@ router.use(ensureLoggedIn);
 router.get('/recommendations', appleMusicCtrl.getRecommendations);
 
 // Get user's music stats
-router.get('/stats', appleMusicCtrl.getUserStats);
+router.get('/stats', appleMusicCtrl.getStats);
 
 module.exports = router;

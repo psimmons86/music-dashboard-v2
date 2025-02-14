@@ -14,9 +14,9 @@ export default function RecentBlog() {
     async function fetchRecentBlog() {
       try {
         setIsLoading(true);
-        const blogs = await blogService.getAllBlogs();
-        if (blogs && blogs.length > 0) {
-          setBlog(blogs[0]); // Get most recent blog
+        const response = await blogService.getAllBlogs();
+        if (response.blogs && response.blogs.length > 0) {
+          setBlog(response.blogs[0]); // Get most recent blog
         }
       } catch (error) {
         console.error('Error fetching recent blog:', error);

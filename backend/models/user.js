@@ -2,61 +2,44 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
-  email: {
+  username: {
     type: String,
     required: true,
-    unique: true,
-    lowercase: true
+    unique: true
   },
   password: {
     type: String,
     required: true
   },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+  isPublic: {
+    type: Boolean,
+    default: true
   },
-  spotifyAccessToken: { 
-    type: String,
-    default: null
+  recentActivity: {
+    type: Array,
+    default: []
   },
-  spotifyRefreshToken: { 
-    type: String,
-    default: null
+  stats: {
+    totalRecords: {
+      type: Number,
+      default: 0
+    },
+    totalPlays: {
+      type: Number,
+      default: 0
+    },
+    daysCollecting: {
+      type: Number,
+      default: 0
+    }
   },
-  spotifyTokenExpiry: { 
-    type: Date,
-    default: null
+  lastLoginAttempt: {
+    type: Date
   },
-  spotifyId: { 
-    type: String,
-    default: null
-  },
-  appleMusicToken: {
-    type: String,
-    default: null
-  },
-  appleMusicUserToken: {
-    type: String,
-    default: null
-  },
-  profilePicture: {
-    type: String,
-    default: '/default-profile.png'
-  },
-  favoriteGenres: [{
-    type: String,
-    enum: ['Rock', 'Hip Hop', 'Electronic', 'Pop', 'Jazz', 'Classical', 'R&B', 'Country', 'Metal', 'Folk', 'Blues']
-  }],
-  favoriteMoods: [{
-    type: String,
-    enum: ['Happy', 'Chill', 'Energetic', 'Sad', 'Focused']
-  }]
+  loginAttempts: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: true,
   toJSON: {
@@ -88,4 +71,4 @@ userSchema.methods.comparePassword = async function(tryPassword) {
   }
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema, 'users');

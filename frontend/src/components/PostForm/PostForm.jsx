@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Music, Smile, X, Loader2 } from 'lucide-react';
 
-export default function PostForm({ onSubmit }) {
+export default function PostForm({ onPostCreated }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [postContent, setPostContent] = useState('');
@@ -21,7 +21,7 @@ export default function PostForm({ onSubmit }) {
       setIsSubmitting(true);
       setError('');
       
-      await onSubmit({
+      await onPostCreated({
         content: postContent,
         currentSong: currentSong.trim()
       });

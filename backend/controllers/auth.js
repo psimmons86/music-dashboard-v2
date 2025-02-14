@@ -14,7 +14,7 @@ const createJWT = (user) => {
     { 
       user: { 
         _id: user._id, 
-        name: user.name, 
+        username: user.username, 
         email: user.email, 
         role: user.role 
       } 
@@ -29,20 +29,28 @@ const authController = {
   // User Signup
   async signup(req, res) {
     try {
-      const { name, email, password, adminCode } = req.body;
+      const { username, email, password, adminCode } = req.body;
 
       // Input validation
-      if (!name || !email || !password) {
+      if (!username || !password) {
         return res.status(400).json({ 
-          message: 'Please provide name, email, and password' 
+          message: 'Please provide username and password' 
         });
       }
 
       // Check if user already exists
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      const existingUser = await User.findOne({
+        $or: [
+          { username: new RegExp(`^${username}$`, 'i') },
+          email ? { email: email.toLowerCase() } : undefined
+        ].filter(Boolean)
+      });
+      
       if (existingUser) {
         return res.status(400).json({ 
-          message: 'User already exists' 
+          message: existingUser.username.toLowerCase() === username.toLowerCase() 
+            ? 'Username already exists'
+            : 'Email already exists'
         });
       }
 
@@ -53,8 +61,8 @@ const authController = {
 
       // Create new user
       const user = new User({
-        name,
-        email: email.toLowerCase(),
+        username,
+        email: email ? email.toLowerCase() : undefined,
         password,
         role
       });
@@ -87,61 +95,60 @@ const authController = {
   // User Login
   async login(req, res) {
     try {
-      const { email, password } = req.body;
-      console.log('Login attempt for:', email); // Debug log
+      const { email, username, password } = req.body;
+      console.log('Login attempt for:', email || username); // Debug log
 
-      try {
-        // Input validation
-        if (!email || !password) {
-          console.log('Missing email or password'); // Debug log
-          return res.status(400).json({ 
-            message: 'Please provide email and password' 
-          });
-        }
-
-        // Find user by email (case-insensitive)
-        const user = await User.findOne({ email: email.toLowerCase() });
-        if (!user) {
-          console.log('User not found:', email); // Debug log
-          return res.status(401).json({ 
-            message: 'Invalid email or password' 
-          });
-        }
-
-        // Verify password
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-          console.log('Invalid password for:', email); // Debug log
-          return res.status(401).json({ 
-            message: 'Invalid email or password' 
-          });
-        }
-
-        // Generate JWT
-        const token = createJWT(user);
-        console.log('Generated token for:', email); // Debug log
-
-        // Prepare user response (remove sensitive data)
-        const userResponse = user.toObject();
-        delete userResponse.password;
-
-        // Send successful response
-        console.log('Login successful for:', email); // Debug log
-        res.json({
-          user: userResponse,
-          token
-        });
-      } catch (err) {
-        console.error('Login processing error:', err);
-        res.status(500).json({ 
-          message: 'Error processing login request' 
+      // Input validation
+      if ((!email && !username) || !password) {
+        console.log('Missing credentials'); // Debug log
+        return res.status(400).json({ 
+          message: 'Please provide email/username and password' 
         });
       }
 
+      // Find user by email or username (case-insensitive)
+      const query = email 
+        ? { email: email.toLowerCase() }
+        : { username: new RegExp(`^${username}$`, 'i') };
+      
+      const user = await User.findOne(query);
+      if (!user) {
+        console.log('User not found:', email || username); // Debug log
+        return res.status(401).json({ 
+          message: 'Invalid credentials' 
+        });
+      }
+
+      // Verify password
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        console.log('Invalid password for:', email || username); // Debug log
+        return res.status(401).json({ 
+          message: 'Invalid credentials' 
+        });
+      }
+
+      // Generate JWT
+      const token = createJWT(user);
+      console.log('Generated token for:', email || username); // Debug log
+
+      // Prepare user response (remove sensitive data)
+      const userResponse = user.toObject();
+      delete userResponse.password;
+
+      // Send successful response
+      console.log('Login successful for:', email || username); // Debug log
+      res.json({
+        user: userResponse,
+        token
+      });
+
     } catch (error) {
       console.error('Login error:', error);
+      // Send a proper error response
       res.status(500).json({ 
-        message: error.message || 'Error logging in'
+        message: error.message || 'Error logging in',
+        error: process.env.NODE_ENV === 'development' ? error : {}
       });
     }
   },

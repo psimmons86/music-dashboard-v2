@@ -16,7 +16,7 @@ export default function NewsItem({ article }) {
   }
 
   return (
-    <article className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+    <article className="bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
       {article.urlToImage && (
         <div className="aspect-video mb-3 overflow-hidden rounded-lg">
           <img 

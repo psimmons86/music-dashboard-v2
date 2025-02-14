@@ -1,6 +1,6 @@
 import sendRequest from './sendRequest';
 
-const BASE_URL = '/api/blog';
+const BASE_URL = '/api/blogs';
 
 export function getAllBlogs(page = 1, limit = 10, sortBy = 'newest', searchQuery = '', category = '') {
   const params = new URLSearchParams({
